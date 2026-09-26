@@ -142,6 +142,23 @@ body {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
+/* antd Select — match .input look (40px height, emerald focus) */
+.select-input {
+  --ant-select-border-radius: 0.75rem !important;
+  --ant-select-border-color: #e2e8f0 !important;
+  --ant-select-height: 40px !important;
+}
+
+.select-input:not(.ant-select-disabled):hover {
+  --ant-select-border-color: #10b981 !important;
+}
+
+.select-input.ant-select-focused {
+  --ant-select-border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+}
+
+
 .label {
   display: block;
   margin-bottom: 0.3rem;

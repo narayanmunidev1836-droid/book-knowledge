@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SearchOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import { Select } from "antd";
 import GalleryGrid from "@/components/GalleryGrid";
 
 export default function TopicSearchPage() {
@@ -43,29 +44,21 @@ export default function TopicSearchPage() {
 
       <div className="max-w-sm fade-up" style={{ animationDelay: "0.06s" }}>
         <label className="label">Select topic</label>
-        <div className="relative">
-          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400">
-            <SearchOutlined />
-          </span>
-          <select
-            value={topicId}
-            onChange={(e) => {
-              const value = e.target.value;
-              setTopicId(value);
-              setEntries([]);
-              setError("");
-              setLoading(Boolean(value));
-            }}
-            className="input !pl-9"
-          >
-            <option value="">— Select topic —</option>
-            {topics.map((t) => (
-              <option key={t._id} value={t._id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          value={topicId || undefined}
+          onChange={(v) => {
+            setTopicId(v);
+            setEntries([]);
+            setError("");
+            setLoading(Boolean(v));
+          }}
+          placeholder="— Select topic —"
+          className="select-input w-full"
+          prefix={<SearchOutlined className="text-slate-400" />}
+          options={topics.map((t) => ({ value: t._id, label: t.name }))}
+          showSearch
+          optionFilterProp="label"
+        />
       </div>
 
       {selectedTopic && (

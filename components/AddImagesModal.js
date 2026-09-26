@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Modal } from "antd";
+import { Modal, Select } from "antd";
 import {
   UploadOutlined,
   PlusOutlined,
@@ -139,19 +139,16 @@ export default function AddImagesModal({ onClose, topics, onTopicAdded, onUpload
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label">Book *</label>
-            <select
-              value={form.bookId}
-              onChange={(e) => setField("bookId", e.target.value)}
-              className="input"
-            >
-              <option value="">— Select book —</option>
-              {books.map((b) => (
-                <option key={b._id} value={b._id}>
-                  {b.name}
-                  {b.author ? ` — ${b.author}` : ""}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={form.bookId || undefined}
+              onChange={(v) => setField("bookId", v)}
+              placeholder="— Select book —"
+              className="select-input w-full"
+              options={books.map((b) => ({
+                value: b._id,
+                label: b.name + (b.author ? ` — ${b.author}` : ""),
+              }))}
+            />
             {books.length === 0 && (
               <p className="mt-1 text-xs text-amber-600">
                 Add a book first from the Books page
@@ -161,18 +158,16 @@ export default function AddImagesModal({ onClose, topics, onTopicAdded, onUpload
 
           <div>
             <label className="label">Topic *</label>
-            <select
-              value={form.topicId}
-              onChange={(e) => handleTopicChange(e.target.value)}
-              className="input"
-            >
-              <option value="__add__">+ Add Topic</option>
-              {topics.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={form.topicId === "__add__" ? undefined : form.topicId || undefined}
+              onChange={handleTopicChange}
+              placeholder="— Select topic —"
+              className="select-input w-full"
+              options={[
+                { value: "__add__", label: "+ Add Topic" },
+                ...topics.map((t) => ({ value: t._id, label: t.name })),
+              ]}
+            />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

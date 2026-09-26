@@ -192,7 +192,7 @@ export default function AdminTopicsPage() {
         title="Delete Topic"
         message={
           deleteTarget
-            ? `"${deleteTarget.name}" and all its images will be deleted. Continue?`
+            ? `"${deleteTarget.name}" will be deleted. Images tagged only with this topic will be deleted.`
             : ""
         }
         confirmText="Delete"

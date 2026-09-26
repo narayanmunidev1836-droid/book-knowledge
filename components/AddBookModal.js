@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Modal } from "antd";
+import { Modal, Select } from "antd";
 import {
   SaveOutlined,
   Loading3QuartersOutlined,
@@ -108,17 +108,12 @@ export default function AddBookModal({ onClose, onCreated }) {
           </div>
           <div>
             <label className="label">Language</label>
-            <select
+            <Select
               value={form.language}
-              onChange={(e) => set("language", e.target.value)}
-              className="input"
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => set("language", v)}
+              className="select-input w-full"
+              options={LANGUAGES.map((l) => ({ value: l, label: l }))}
+            />
           </div>
           <div>
             <label className="label">Category (optional)</label>

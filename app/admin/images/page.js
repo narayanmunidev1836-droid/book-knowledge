@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Select } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
@@ -104,21 +105,18 @@ export default function AdminImagesPage() {
             className="input !pl-9"
           />
         </div>
-        <select
+        <Select
           value={topicId}
-          onChange={(e) => {
-            setTopicId(e.target.value);
+          onChange={(v) => {
+            setTopicId(v);
             setLoading(true);
           }}
-          className="input w-auto"
-        >
-          <option value="">All topics</option>
-          {topics.map((t) => (
-            <option key={t._id} value={t._id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
+          className="select-input w-44"
+          options={[
+            { value: "", label: "All topics" },
+            ...topics.map((t) => ({ value: t._id, label: t.name })),
+          ]}
+        />
       </div>
 
       {message && (
@@ -159,7 +157,7 @@ export default function AdminImagesPage() {
                   {new Date(e.createdAt).toLocaleString("en-IN")} ·{" "}
                   <b className="text-slate-800">{e.uploadedByName}</b> · {e.bookName} ·{" "}
                   <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
-                    {e.topicName}
+                    {e.topicNames?.length ? e.topicNames.join(", ") : e.topicName}
                   </span>
                 </span>
                 <button

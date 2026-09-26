@@ -102,7 +102,9 @@ export default function AdminDashboard() {
                   <td className="py-2 pr-4">{entry.bookName}</td>
                   <td className="py-2 pr-4">
                     <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
-                      {entry.topicName}
+                      {entry.topicNames?.length
+                        ? entry.topicNames.join(", ")
+                        : entry.topicName}
                     </span>
                   </td>
                   <td className="py-2 pr-4">{entry.page || "—"}</td>

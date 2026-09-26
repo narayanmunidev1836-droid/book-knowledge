@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Select } from "antd";
 import {
   SaveOutlined,
   Loading3QuartersOutlined,
@@ -16,11 +17,12 @@ export default function EntryForm({ onAddBook, newBook }) {
   const [topics, setTopics] = useState([]);
   const [form, setForm] = useState({
     bookId: "",
-    topicId: "",
+    topicIds: [],
     page: "",
     note: "",
   });
   const [newTopic, setNewTopic] = useState("");
+  const [newTopicOpen, setNewTopicOpen] = useState(false);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
   const [message, setMessage] = useState(null);
@@ -76,6 +78,15 @@ export default function EntryForm({ onAddBook, newBook }) {
     set("bookId", value);
   }
 
+  function handleTopicsChange(values) {
+    if (values.includes("__new__")) {
+      setNewTopicOpen(true);
+      setForm((f) => ({ ...f, topicIds: values.filter((v) => v !== "__new__") }));
+      return;
+    }
+    set("topicIds", values);
+  }
+
   async function handleNewTopic() {
     const name = newTopic.trim();
     if (!name) return;
@@ -90,20 +101,17 @@ export default function EntryForm({ onAddBook, newBook }) {
       return;
     }
     setTopics((t) => [...t, json].sort((a, b) => a.name.localeCompare(b.name)));
-    setForm((f) => ({ ...f, topicId: json._id }));
+    setForm((f) => ({ ...f, topicIds: [...f.topicIds, json._id] }));
     setNewTopic("");
+    setNewTopicOpen(false);
     setMessage({ type: "ok", text: "New topic added ✓" });
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setMessage(null);
-    if (form.topicId === "__new__") {
-      setMessage({ type: "error", text: "Add a new topic first" });
-      return;
-    }
-    if (!form.bookId || !form.topicId) {
-      setMessage({ type: "error", text: "Select book and topic" });
+    if (!form.bookId || !form.topicIds.length) {
+      setMessage({ type: "error", text: "Select book and at least one topic" });
       return;
     }
     if (!image) {
@@ -114,7 +122,7 @@ export default function EntryForm({ onAddBook, newBook }) {
     setPending(true);
     const data = new FormData();
     data.append("bookId", form.bookId);
-    data.append("topicId", form.topicId);
+    form.topicIds.forEach((id) => data.append("topicId", id));
     data.append("page", form.page);
     data.append("note", form.note);
     data.append("image", image);
@@ -129,7 +137,7 @@ export default function EntryForm({ onAddBook, newBook }) {
     }
 
     setMessage({ type: "ok", text: "Entry saved ✓" });
-    setForm({ bookId: "", topicId: "", page: "", note: "" });
+    setForm({ bookId: "", topicIds: [], page: "", note: "" });
     setImage(null);
     if (previewRef.current) URL.revokeObjectURL(previewRef.current);
     previewRef.current = null;
@@ -148,21 +156,19 @@ export default function EntryForm({ onAddBook, newBook }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Book *</label>
-          <select
-            value={form.bookId}
-            onChange={(e) => handleBookChange(e.target.value)}
-            required
-            className="input"
-          >
-            <option value="">— Select book —</option>
-            <option value="__add__">+ Add Book</option>
-            {books.map((b) => (
-              <option key={b._id} value={b._id}>
-                {b.name}
-                {b.author ? ` — ${b.author}` : ""}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={form.bookId || undefined}
+            onChange={handleBookChange}
+            placeholder="— Select book —"
+            className="select-input w-full"
+            options={[
+              { value: "__add__", label: "+ Add Book" },
+              ...books.map((b) => ({
+                value: b._id,
+                label: b.name + (b.author ? ` — ${b.author}` : ""),
+              })),
+            ]}
+          />
           {selectedBook && (
             <p className="mt-1 text-xs text-slate-500">
               {selectedBook.language}
@@ -178,23 +184,20 @@ export default function EntryForm({ onAddBook, newBook }) {
         </div>
 
         <div>
-          <label className="label">Topic *</label>
-          <select
-            value={form.topicId}
-            onChange={(e) => set("topicId", e.target.value)}
-            required
-            className="input"
-          >
-            <option value="">— Select topic —</option>
-            {topics.map((t) => (
-              <option key={t._id} value={t._id}>
-                {t.name}
-              </option>
-            ))}
-            <option value="__new__">+ New topic</option>
-          </select>
+          <label className="label">Topics *</label>
+          <Select
+            mode="multiple"
+            value={form.topicIds}
+            onChange={handleTopicsChange}
+            placeholder="— Select one or more topics —"
+            className="select-input w-full"
+            options={[
+              ...topics.map((t) => ({ value: t._id, label: t.name })),
+              { value: "__new__", label: "+ New topic" },
+            ]}
+          />
 
-          {form.topicId === "__new__" && (
+          {newTopicOpen && (
             <div className="mt-2 flex gap-2">
               <input
                 value={newTopic}

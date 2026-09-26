@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PictureOutlined, FilterOutlined } from "@ant-design/icons";
+import { Select } from "antd";
 import GalleryGrid from "@/components/GalleryGrid";
 
 export default function GalleryPage() {
@@ -25,7 +26,11 @@ export default function GalleryPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const entries = topicId ? all.filter((e) => e.topic === topicId) : all;
+  const entries = topicId
+    ? all.filter(
+        (e) => e.topic === topicId || (e.topics || []).includes(topicId)
+      )
+    : all;
 
   return (
     <div className="space-y-5">
@@ -39,22 +44,17 @@ export default function GalleryPage() {
             Click an image to view it larger — total {entries.length}
           </p>
         </div>
-        <div className="relative w-56">
-          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400">
-            <FilterOutlined />
-          </span>
-          <select
+        <div className="w-56">
+          <Select
             value={topicId}
-            onChange={(e) => setTopicId(e.target.value)}
-            className="input !text-sm !pl-9"
-          >
-            <option value="">All topics</option>
-            {topics.map((t) => (
-              <option key={t._id} value={t._id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+            onChange={setTopicId}
+            className="select-input w-full"
+            prefix={<FilterOutlined className="text-slate-400" />}
+            options={[
+              { value: "", label: "All topics" },
+              ...topics.map((t) => ({ value: t._id, label: t.name })),
+            ]}
+          />
         </div>
       </div>
 

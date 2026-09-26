@@ -20,6 +20,11 @@ export async function PUT(req, { params }) {
   topic.name = name;
   await topic.save();
   await Entry.updateMany({ topic: topic._id }, { topicName: name });
+  await Entry.updateMany(
+    { topics: topic._id },
+    { $set: { "topicNames.$[el]": name } },
+    { arrayFilters: [{ el: topic._id }] }
+  );
   return Response.json(toPlain(topic));
 }
 
@@ -32,7 +37,22 @@ export async function DELETE(req, { params }) {
   const topic = await Topic.findById(id).catch(() => null);
   if (!topic) return Response.json({ error: "Topic not found" }, { status: 404 });
 
-  await Entry.deleteMany({ topic: topic._id });
+  await Entry.updateMany({ topics: topic._id }, { $pull: { topics: topic._id, topicNames: topic.name } });
+
+  const affected = await Entry.find({ topic: topic._id }).lean();
+  for (const entry of affected) {
+    if (entry.topics?.length) {
+      const remaining = entry.topics[0];
+      const remainingName =
+        entry.topicNames?.[0] ||
+        (await Topic.findById(remaining).lean())?.name ||
+        entry.topicName;
+      await Entry.updateOne({ _id: entry._id }, { topic: remaining, topicName: remainingName });
+    } else {
+      await Entry.deleteOne({ _id: entry._id });
+    }
+  }
+
   await topic.deleteOne();
   return Response.json({ ok: true });
 }

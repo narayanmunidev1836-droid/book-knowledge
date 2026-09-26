@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Select } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -133,17 +134,12 @@ export default function AdminBooksPage() {
                     className="input"
                     placeholder="Publisher"
                   />
-                  <select
+                  <Select
                     value={editing.language}
-                    onChange={(e) => setEditing({ ...editing, language: e.target.value })}
-                    className="input"
-                  >
-                    {LANGUAGES.map((l) => (
-                      <option key={l} value={l}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setEditing({ ...editing, language: v })}
+                    className="select-input w-full"
+                    options={LANGUAGES.map((l) => ({ value: l, label: l }))}
+                  />
                   <input
                     value={editing.category || ""}
                     onChange={(e) => setEditing({ ...editing, category: e.target.value })}

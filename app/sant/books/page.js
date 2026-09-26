@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { Select } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -105,17 +106,12 @@ export default function BooksPage() {
                   className="input"
                   placeholder="Category"
                 />
-                <select
+                <Select
                   value={editing.language}
-                  onChange={(e) => setEditing({ ...editing, language: e.target.value })}
-                  className="input"
-                >
-                  {LANGUAGES.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setEditing({ ...editing, language: v })}
+                  className="select-input w-full"
+                  options={LANGUAGES.map((l) => ({ value: l, label: l }))}
+                />
                 <div className="flex gap-2">
                   <button type="button" onClick={saveEdit} className="btn-primary">
                     <SaveOutlined /> Save

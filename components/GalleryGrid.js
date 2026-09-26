@@ -74,7 +74,9 @@ export default function GalleryGrid({ entries, onDelete, onEdit }) {
                 <p className="text-sm text-slate-500">
                   {entry.page ? `Page ${entry.page}` : "No page"} ·{" "}
                   <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
-                    {entry.topicName}
+                    {entry.topicNames?.length
+                      ? entry.topicNames.join(", ")
+                      : entry.topicName}
                   </span>
                 </p>
                 {entry.note && (
@@ -149,10 +151,13 @@ export default function GalleryGrid({ entries, onDelete, onEdit }) {
 
             <div className="mt-4 max-w-xl text-center text-white">
               <p className="font-medium">{entries[active].bookName}</p>
-              <p className="text-sm text-slate-300">
-                {entries[active].page ? `Page ${entries[active].page}` : ""} ·{" "}
-                {entries[active].topicName} · {entries[active].uploadedByName}
-              </p>
+            <p className="text-sm text-slate-300">
+              {entries[active].page ? `Page ${entries[active].page}` : ""} ·{" "}
+              {entries[active].topicNames?.length
+                ? entries[active].topicNames.join(", ")
+                : entries[active].topicName}{" "}
+              · {entries[active].uploadedByName}
+            </p>
               {entries[active].note && (
                 <p className="mt-2 text-sm text-slate-200 italic">
                   “{entries[active].note}”
