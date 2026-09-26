@@ -19,7 +19,7 @@ import Spinner from "@/components/Spinner";
 import ConfirmModal from "@/components/ConfirmModal";
 import EntryEditModal from "@/components/EntryEditModal";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 export default function SearchPage() {
   const [topics, setTopics] = useState([]);
