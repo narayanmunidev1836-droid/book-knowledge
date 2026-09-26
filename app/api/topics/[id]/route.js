@@ -14,6 +14,21 @@ async function loadOwnTopic(id, userId) {
   }
 }
 
+export async function GET(req, { params }) {
+  const { user, error } = await requireRole("sant", "admin");
+  if (error) return error;
+
+  const { id } = await params;
+  const topic = await loadOwnTopic(id, user.id);
+  if (!topic) return Response.json({ error: "Topic not found" }, { status: 404 });
+
+  const entryCount = await Entry.countDocuments({
+    $or: [{ topic: topic._id }, { topics: topic._id }],
+    uploadedBy: user.id,
+  });
+  return Response.json({ ...toPlain(topic), entryCount });
+}
+
 export async function PUT(req, { params }) {
   const { user, error } = await requireRole("sant", "admin");
   if (error) return error;

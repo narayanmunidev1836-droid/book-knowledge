@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   PlusOutlined,
   EditOutlined,
@@ -8,6 +9,7 @@ import {
   SaveOutlined,
   CloseOutlined,
   TagsOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import Spinner from "@/components/Spinner";
@@ -16,9 +18,20 @@ export default function SantTopicsPage() {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
+  const [search, setSearch] = useState("");
   const [message, setMessage] = useState(null);
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const term = search.trim().toLowerCase();
+  const filtered = term
+    ? topics.filter(
+        (t) =>
+          // The row being edited stays visible even if the rename hides it.
+          (editing && editing._id === t._id) ||
+          t.name.toLowerCase().includes(term)
+      )
+    : topics;
 
   useEffect(() => {
     fetch("/api/topics")
@@ -88,13 +101,24 @@ export default function SantTopicsPage() {
         </h1>
         <p className="text-sm text-slate-500">
           Topics you created — total {topics.length}
+          {term ? `, showing ${filtered.length}` : ""}
         </p>
+      </div>
+
+      <div className="relative max-w-md fade-up" style={{ animationDelay: "0.06s" }}>
+        <SearchOutlined className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search topics…"
+          className="input !pl-9"
+        />
       </div>
 
       <form
         onSubmit={handleAdd}
         className="flex max-w-md gap-2 fade-up"
-        style={{ animationDelay: "0.06s" }}
+        style={{ animationDelay: "0.1s" }}
       >
         <input
           value={name}
@@ -124,51 +148,65 @@ export default function SantTopicsPage() {
         <Spinner />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {topics.map((topic, i) => (
+          {filtered.map((topic, i) => (
             <div
               key={topic._id}
               className="card card-hover fade-up flex items-center justify-between gap-2 p-4"
               style={{ animationDelay: `${Math.min(i * 0.04, 0.3)}s` }}
             >
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
-                  <TagsOutlined />
-                </span>
-                <div className="min-w-0">
-                  {editing?._id === topic._id ? (
-                    <div className="flex gap-2">
-                      <input
-                        value={editing.name}
-                        onChange={(e) =>
-                          setEditing({ ...editing, name: e.target.value })
-                        }
-                        className="input !py-1"
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        onClick={saveEdit}
-                        className="icon-btn bg-emerald-600 text-white hover:bg-emerald-700"
-                        title="Save"
-                      >
-                        <SaveOutlined />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditing(null)}
-                        className="icon-btn border border-slate-200 text-slate-500 hover:bg-slate-100"
-                        title="Cancel"
-                      >
-                        <CloseOutlined />
-                      </button>
-                    </div>
-                  ) : (
+              {editing?._id === topic._id ? (
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                    <TagsOutlined />
+                  </span>
+                  <input
+                    value={editing.name}
+                    onChange={(e) =>
+                      setEditing({ ...editing, name: e.target.value })
+                    }
+                    className="input !py-1 flex-1"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={saveEdit}
+                    className="icon-btn shrink-0 bg-emerald-600 text-white hover:bg-emerald-700"
+                    title="Save"
+                  >
+                    <SaveOutlined />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditing(null)}
+                    className="icon-btn shrink-0 border border-slate-200 text-slate-500 hover:bg-slate-100"
+                    title="Cancel"
+                  >
+                    <CloseOutlined />
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href={`/sant/topics/${topic._id}`}
+                  title="View records of this topic"
+                  className="flex min-w-0 flex-1 items-center gap-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                    <TagsOutlined />
+                  </span>
+                  <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-emerald-700">
                       {topic.name}
                     </p>
-                  )}
-                </div>
-              </div>
+                    <p className="text-xs font-medium text-slate-500">
+                      {topic.entryCount || 0}{" "}
+                      {(topic.entryCount || 0) === 1 ? "record" : "records"}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs font-medium text-emerald-500">
+                    View →
+                  </span>
+                </Link>
+              )}
               {editing?._id !== topic._id && (
                 <div className="flex shrink-0 gap-2">
                   <button
@@ -195,6 +233,14 @@ export default function SantTopicsPage() {
             <p className="text-sm text-slate-500">
               No topics yet — add your first one above.
             </p>
+          )}
+          {topics.length > 0 && filtered.length === 0 && (
+            <div className="card col-span-full flex items-center gap-2 p-6 text-slate-500">
+              <SearchOutlined className="text-emerald-400" />
+              <p className="text-sm">
+                No topics match “{search.trim()}” — try another word.
+              </p>
+            </div>
           )}
         </div>
       )}

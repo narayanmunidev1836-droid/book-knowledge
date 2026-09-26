@@ -11,6 +11,7 @@ import {
   CloseOutlined,
   BookOutlined,
   PlusCircleOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import AddBookModal from "@/components/AddBookModal";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -22,9 +23,21 @@ export default function BooksPage() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const term = search.trim().toLowerCase();
+  const filtered = term
+    ? books.filter((b) =>
+        // The row being edited stays visible even if the rename hides it.
+        (editing && editing._id === b._id) ||
+        [b.name, b.author, b.category, b.language]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(term))
+      )
+    : books;
 
   useEffect(() => {
     fetch("/api/books")
@@ -73,11 +86,22 @@ export default function BooksPage() {
             Click a book to see all its records — {books.length} book
             {books.length === 1 ? "" : "s"},{" "}
             {books.reduce((n, b) => n + (b.entryCount || 0), 0)} records
+            {term ? `, showing ${filtered.length}` : ""}
           </p>
         </div>
         <button type="button" onClick={() => setShowAdd(true)} className="btn-primary">
           <PlusCircleOutlined /> Add Book
         </button>
+      </div>
+
+      <div className="relative max-w-md fade-up" style={{ animationDelay: "0.06s" }}>
+        <SearchOutlined className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search books — name, author, category…"
+          className="input !pl-9"
+        />
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -86,7 +110,7 @@ export default function BooksPage() {
         <Spinner />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {books.map((book) =>
+          {filtered.map((book) =>
             editing?._id === book._id ? (
               <div
                 key={book._id}
@@ -197,6 +221,14 @@ export default function BooksPage() {
               <button type="button" onClick={() => setShowAdd(true)} className="btn-primary">
                 <PlusCircleOutlined /> Add Book
               </button>
+            </div>
+          )}
+          {books.length > 0 && filtered.length === 0 && (
+            <div className="card col-span-full flex items-center gap-2 p-6 text-slate-500">
+              <SearchOutlined className="text-emerald-400" />
+              <p className="text-sm">
+                No books match “{search.trim()}” — try another word.
+              </p>
             </div>
           )}
         </div>

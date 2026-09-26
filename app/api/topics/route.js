@@ -1,19 +1,50 @@
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
-import { Topic } from "@/lib/models";
+import { Topic, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
+
+// Records per topic — an entry can carry a topic in `topic` or in `topics`.
+async function topicRecordCounts(userId) {
+  let oid;
+  try {
+    oid = new mongoose.Types.ObjectId(String(userId));
+  } catch {
+    return [];
+  }
+  return Entry.aggregate([
+    { $match: { uploadedBy: oid } },
+    {
+      $project: {
+        ids: { $setUnion: [["$topic"], { $ifNull: ["$topics", []] }] },
+      },
+    },
+    { $unwind: "$ids" },
+    { $match: { ids: { $ne: null } } },
+    { $group: { _id: "$ids", count: { $sum: 1 } } },
+  ]);
+}
 
 export async function GET() {
   const { user, error } = await requireRole("sant", "admin");
   if (error) return error;
 
   await connectDB();
-  const topics = await Topic.find({ createdBy: user.id })
-    .sort({ name: 1 })
-    .lean();
-  return Response.json(toPlain(topics));
+  const [topics, counts] = await Promise.all([
+    Topic.find({ createdBy: user.id })
+      .sort({ name: 1 })
+      .lean(),
+    topicRecordCounts(user.id),
+  ]);
+
+  const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+  const plain = toPlain(topics).map((t) => ({
+    ...t,
+    entryCount: countMap.get(String(t._id)) || 0,
+  }));
+  return Response.json(plain);
 }
 
 export async function POST(req) {
