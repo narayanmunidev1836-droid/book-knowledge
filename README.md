@@ -65,6 +65,10 @@ AUTH_URL=http://localhost:3000
 ADMIN_EMAIL=admin@book.com
 ADMIN_PASSWORD=your-admin-password
 ADMIN_NAME=Admin
+
+# Image storage — Vercel Blob (only needed when deploying to Vercel;
+# locally images are saved to ./uploads when this is absent)
+BLOB_READ_WRITE_TOKEN=...
 ```
 
 ### 3. Run the dev server
@@ -126,6 +130,21 @@ proxy.js          # Route protection middleware
 All books, topics and entries are scoped to their creator — each sant sees and
 manages only their own data. The admin manages users only (no books, topics or
 images).
+
+## Deployment (Vercel)
+
+Vercel's serverless filesystem is read-only, so images are stored in
+**Vercel Blob** instead of `./uploads`:
+
+1. Vercel dashboard → your project → **Storage** → create **Blob** store →
+   connect it to the project (this auto-adds `BLOB_READ_WRITE_TOKEN`).
+2. Add the other env vars (`MONGODB_URI`, `AUTH_SECRET`, `ADMIN_*`) under
+   **Settings → Environment Variables**.
+3. Redeploy.
+
+`lib/upload.js` automatically switches: with `BLOB_READ_WRITE_TOKEN` set it
+uses Blob, otherwise it writes to `./uploads` (local dev). Deletion works for
+both. Legacy `/uploads/...` paths keep being served by `app/uploads/[...filepath]`.
 
 ## License
 
