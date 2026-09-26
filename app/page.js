@@ -5,6 +5,6 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const session = await auth();
-  if (!session) redirect("/login");
+  if (!session?.user) redirect("/login");
   redirect(session.user.role === "admin" ? "/admin" : "/sant");
 }

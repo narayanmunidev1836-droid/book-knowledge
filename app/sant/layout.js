@@ -14,7 +14,7 @@ const links = [
 
 export default async function SantLayout({ children }) {
   const session = await auth();
-  if (!session) redirect("/login");
+  if (!session?.user) redirect("/login");
   if (session.user.role === "admin") redirect("/admin");
   const settings = await getSettings();
 

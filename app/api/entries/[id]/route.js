@@ -57,7 +57,7 @@ export async function PUT(req, { params }) {
       .getAll("image")
       .filter((f) => f && typeof f !== "string" && f.size > 0);
   } else {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     note = typeof body.note === "string" ? body.note.trim() : undefined;
     pageRaw = body.page !== undefined ? String(body.page).trim() : undefined;
     removeImages = Array.isArray(body.removeImages)

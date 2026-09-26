@@ -16,19 +16,19 @@ const CARDS = [
   { key: "totalEntries", label: "Total Images", icon: PictureOutlined, tint: "from-violet-500 to-purple-500" },
 ];
 
-function BarChart({ data, height = 160 }) {
-  const max = Math.max(1, ...data.map((d) => d.count));
+function BarChart({ data = [], height = 160 }) {
+  const max = Math.max(1, ...data.map((d) => d?.count || 0));
   return (
     <div className="flex items-end gap-[3px]" style={{ height }}>
-      {data.map((d) => (
-        <div key={d.date} className="group relative flex-1">
+      {data.filter(Boolean).map((d) => (
+        <div key={d.date || ""} className="group relative flex-1">
           <div
             className="w-full rounded-t bg-gradient-to-t from-emerald-500 to-teal-400 transition group-hover:from-emerald-600 group-hover:to-teal-500"
-            style={{ height: Math.max(3, (d.count / max) * height) }}
-            title={`${d.date}: ${d.count}`}
+            style={{ height: Math.max(3, ((d.count || 0) / max) * height) }}
+            title={`${d.date || ""}: ${d.count || 0}`}
           />
           <span className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-white group-hover:block">
-            {d.count}
+            {d.count || 0}
           </span>
         </div>
       ))}
@@ -36,21 +36,21 @@ function BarChart({ data, height = 160 }) {
   );
 }
 
-function RankList({ items, color = "emerald" }) {
-  const max = Math.max(1, ...items.map((i) => i.count));
+function RankList({ items = [], color = "emerald" }) {
   if (!items.length) return <p className="text-sm text-slate-500">No data yet</p>;
+  const max = Math.max(1, ...items.map((i) => i?.count || 0));
   return (
     <div className="space-y-2.5">
-      {items.map((item, i) => (
-        <div key={`${item.name}-${i}`}>
+      {items.filter(Boolean).map((item, i) => (
+        <div key={`${item.name || i}-${i}`}>
           <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
             <span className="truncate font-medium text-slate-700">{item.name}</span>
-            <span className="shrink-0 text-xs font-semibold text-slate-500">{item.count}</span>
+            <span className="shrink-0 text-xs font-semibold text-slate-500">{item.count || 0}</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-slate-100">
             <div
               className={`h-full rounded-full bg-gradient-to-r ${color === "emerald" ? "from-emerald-500 to-teal-500" : "from-sky-500 to-blue-500"}`}
-              style={{ width: `${(item.count / max) * 100}%` }}
+              style={{ width: `${((item.count || 0) / max) * 100}%` }}
             />
           </div>
         </div>
@@ -74,18 +74,19 @@ export default function AdminDashboard() {
   }, []);
 
   const labels = useMemo(() => {
-    if (!data) return [];
-    return data.daily.map((d, i) => ({
+    const daily = data?.daily || [];
+    return daily.map((d, i) => ({
       ...d,
-      show: i % 5 === 0 || i === data.daily.length - 1,
+      show: i % 5 === 0 || i === daily.length - 1,
     }));
   }, [data]);
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (!data) return <Spinner />;
 
-  const total30 = data.daily.reduce((s, d) => s + d.count, 0);
-  const activeDays = data.daily.filter((d) => d.count > 0).length;
+  const daily = data.daily || [];
+  const total30 = daily.reduce((s, d) => s + (d?.count || 0), 0);
+  const activeDays = daily.filter((d) => (d?.count || 0) > 0).length;
 
   return (
     <div className="space-y-6">
@@ -117,7 +118,7 @@ export default function AdminDashboard() {
                 <Icon />
               </div>
               <div className="mt-3 text-3xl font-bold text-slate-800">
-                {(data.totals[card.key] ?? 0).toLocaleString("en-IN")}
+                {(data.totals?.[card.key] ?? 0).toLocaleString("en-IN")}
               </div>
               <div className="text-sm text-slate-500">{card.label}</div>
             </div>
@@ -135,7 +136,7 @@ export default function AdminDashboard() {
         </div>
         <BarChart data={labels} />
         <div className="mt-2 flex justify-between text-[10px] text-slate-400">
-          {labels.filter((d) => d.show).map((d) => (
+          {labels.filter((d) => d?.show && d?.date).map((d) => (
             <span key={d.date}>{d.date.slice(5)}</span>
           ))}
         </div>
@@ -144,15 +145,15 @@ export default function AdminDashboard() {
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="card fade-up p-5" style={{ animationDelay: "0.3s" }}>
           <h2 className="mb-4 font-semibold text-slate-800">Top Books</h2>
-          <RankList items={data.topBooks} color="sky" />
+          <RankList items={data.topBooks || []} color="sky" />
         </div>
         <div className="card fade-up p-5" style={{ animationDelay: "0.36s" }}>
           <h2 className="mb-4 font-semibold text-slate-800">Top Topics</h2>
-          <RankList items={data.topTopics} />
+          <RankList items={data.topTopics || []} />
         </div>
         <div className="card fade-up p-5" style={{ animationDelay: "0.42s" }}>
           <h2 className="mb-4 font-semibold text-slate-800">Most Active Sants</h2>
-          <RankList items={data.perSant} />
+          <RankList items={data.perSant || []} />
         </div>
       </div>
     </div>

@@ -15,7 +15,7 @@ export async function PUT(req, { params }) {
   const target = await User.findById(id).catch(() => null);
   if (!target) return Response.json({ error: "User not found" }, { status: 404 });
 
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
 
   if (typeof body.active === "boolean") {
     if (String(target._id) === admin.id && body.active === false) {

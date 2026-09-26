@@ -27,7 +27,7 @@ export async function PUT(req) {
   const { user, error } = await requireRole("admin");
   if (error) return error;
 
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   const siteName = String(body?.siteName || "").trim();
   const tagline = String(body?.tagline || "").trim();
   if (!siteName) {

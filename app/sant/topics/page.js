@@ -47,7 +47,7 @@ export default function SantTopicsPage() {
   }
 
   async function saveEdit() {
-    const next = editing.name.trim();
+    const next = String(editing?.name || "").trim();
     if (!next) return;
     const res = await fetch(`/api/topics/${editing._id}`, {
       method: "PUT",

@@ -21,7 +21,7 @@ export async function POST(req) {
   if (error) return error;
 
   await connectDB();
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   const name = String(body?.name || "").trim();
   if (!name) {
     return Response.json({ error: "Topic name is required" }, { status: 400 });

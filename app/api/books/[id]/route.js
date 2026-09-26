@@ -32,7 +32,7 @@ export async function PUT(req, { params }) {
   const book = await loadOwnBook(id, user.id);
   if (!book) return Response.json({ error: "Book not found" }, { status: 404 });
 
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   const fields = ["name", "author", "publisher", "language", "category"];
   for (const key of fields) {
     if (typeof body[key] === "string") book[key] = body[key].trim();

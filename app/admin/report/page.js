@@ -27,17 +27,19 @@ export default function AdminReportPage() {
   const rows = useMemo(() => {
     if (!data) return [];
     const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    return data.rows.filter((r) => rx.test(r.name) || rx.test(r.email) || rx.test(r.mobile));
+    return (data.rows || []).filter(
+      (r) => rx.test(r?.name || "") || rx.test(r?.email || "") || rx.test(r?.mobile || "")
+    );
   }, [data, q]);
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (!data) return <Spinner />;
 
   const cards = [
-    { key: "sants", label: "Total Sants", value: data.sants, icon: UserOutlined, tint: "from-emerald-500 to-teal-500" },
-    { key: "books", label: "Total Books", value: data.totals.books, icon: DatabaseOutlined, tint: "from-sky-500 to-blue-500" },
-    { key: "topics", label: "Total Topics", value: data.totals.topics, icon: DatabaseOutlined, tint: "from-amber-500 to-orange-500" },
-    { key: "entries", label: "Total Images", value: data.totals.entries, icon: DatabaseOutlined, tint: "from-violet-500 to-purple-500" },
+    { key: "sants", label: "Total Sants", value: data.sants ?? 0, icon: UserOutlined, tint: "from-emerald-500 to-teal-500" },
+    { key: "books", label: "Total Books", value: data.totals?.books ?? 0, icon: DatabaseOutlined, tint: "from-sky-500 to-blue-500" },
+    { key: "topics", label: "Total Topics", value: data.totals?.topics ?? 0, icon: DatabaseOutlined, tint: "from-amber-500 to-orange-500" },
+    { key: "entries", label: "Total Images", value: data.totals?.entries ?? 0, icon: DatabaseOutlined, tint: "from-violet-500 to-purple-500" },
   ];
 
   return (
@@ -74,7 +76,7 @@ export default function AdminReportPage() {
           className="input max-w-xs"
         />
         <span className="text-sm text-slate-500">{rows.length} sants</span>
-        {data.inactive > 0 && (
+        {(data.inactive ?? 0) > 0 && (
           <span className="rounded-lg bg-red-50 px-2 py-1 text-xs font-medium text-red-600">
             {data.inactive} inactive
           </span>

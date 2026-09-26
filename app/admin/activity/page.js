@@ -83,7 +83,7 @@ export default function AdminActivityPage() {
   }, [action, q]);
 
   async function loadMore() {
-    if (!data || page >= data.pages) return;
+    if (!data || page >= (data.pages ?? 0)) return;
     setLoadingMore(true);
     const next = page + 1;
     const params = new URLSearchParams({ action, q, page: String(next), limit: "30" });
@@ -91,7 +91,10 @@ export default function AdminActivityPage() {
       const res = await fetch(`/api/admin/activity?${params}`);
       const d = await res.json();
       if (!d?.error) {
-        setData((prev) => ({ ...d, items: [...prev.items, ...d.items] }));
+        setData((prev) => ({
+          ...d,
+          items: [...(prev?.items || []), ...(d.items || [])],
+        }));
         setPage(next);
       }
     } finally {
@@ -101,6 +104,8 @@ export default function AdminActivityPage() {
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (!data) return <Spinner />;
+
+  const items = data.items || [];
 
   return (
     <div className="space-y-5">
@@ -112,7 +117,7 @@ export default function AdminActivityPage() {
           Activity Log
         </h1>
         <p className="text-sm text-slate-500">
-          {data.total.toLocaleString("en-IN")} recorded actions
+          {(data.total ?? 0).toLocaleString("en-IN")} recorded actions
         </p>
       </div>
 
@@ -140,7 +145,7 @@ export default function AdminActivityPage() {
       </div>
 
       <div className="space-y-2">
-        {data.items.map((item, i) => {
+        {items.map((item, i) => {
           const Icon = ICONS[item.action] || HistoryOutlined;
           const tint = TINTS[item.action] || "bg-emerald-100 text-emerald-600";
           return (
@@ -174,19 +179,19 @@ export default function AdminActivityPage() {
             </div>
           );
         })}
-        {data.items.length === 0 && (
+        {items.length === 0 && (
           <p className="card p-6 text-center text-sm text-slate-500">No activity found</p>
         )}
       </div>
 
-      {page < data.pages && (
+      {page < (data.pages ?? 0) && (
         <button
           type="button"
           onClick={loadMore}
           disabled={loadingMore}
           className="btn-ghost mx-auto"
         >
-          {loadingMore ? "Loading…" : `Load more (${data.total - data.items.length} left)`}
+          {loadingMore ? "Loading…" : `Load more (${(data.total ?? 0) - items.length} left)`}
         </button>
       )}
     </div>

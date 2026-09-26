@@ -13,7 +13,7 @@ const links = [
 
 export default async function AdminLayout({ children }) {
   const session = await auth();
-  if (!session) redirect("/login");
+  if (!session?.user) redirect("/login");
   if (session.user.role !== "admin") redirect("/sant");
   const settings = await getSettings();
 

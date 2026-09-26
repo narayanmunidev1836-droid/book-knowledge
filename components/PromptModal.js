@@ -28,7 +28,7 @@ export default function PromptModal({
   }
 
   async function handleOk() {
-    if (required && !value.trim()) {
+    if (required && !String(value ?? "").trim()) {
       setError("This field is required");
       return;
     }

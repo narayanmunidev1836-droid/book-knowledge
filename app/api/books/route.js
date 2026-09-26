@@ -1,5 +1,6 @@
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
-import { Book } from "@/lib/models";
+import { Book, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { saveUpload } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
@@ -14,7 +15,30 @@ export async function GET() {
   const books = await Book.find({ createdBy: user.id })
     .sort({ name: 1 })
     .lean();
-  return Response.json(toPlain(books));
+
+  // aggregate() does not cast strings — the id must be an ObjectId.
+  let userId = null;
+  try {
+    userId = new mongoose.Types.ObjectId(String(user.id));
+  } catch {
+    userId = null;
+  }
+  const counts = userId
+    ? await Entry.aggregate([
+        { $match: { uploadedBy: userId } },
+        { $group: { _id: "$book", count: { $sum: 1 } } },
+      ])
+    : [];
+  const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+  return Response.json(
+    toPlain(
+      books.map((b) => ({
+        ...b,
+        entryCount: countMap.get(String(b._id)) || 0,
+      }))
+    )
+  );
 }
 
 export async function POST(req) {

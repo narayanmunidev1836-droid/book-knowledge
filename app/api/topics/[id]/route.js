@@ -22,7 +22,7 @@ export async function PUT(req, { params }) {
   const topic = await loadOwnTopic(id, user.id);
   if (!topic) return Response.json({ error: "Topic not found" }, { status: 404 });
 
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   const name = String(body?.name || "").trim();
   if (!name) return Response.json({ error: "Name is required" }, { status: 400 });
 

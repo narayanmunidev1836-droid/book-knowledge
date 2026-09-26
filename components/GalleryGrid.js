@@ -15,7 +15,7 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 
-export default function GalleryGrid({ entries, onDelete, onEdit }) {
+export default function GalleryGrid({ entries = [], onDelete, onEdit }) {
   const [active, setActive] = useState(null); // index into slides
   const [fullImages, setFullImages] = useState({}); // entryId -> full image[]
 

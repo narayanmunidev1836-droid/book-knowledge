@@ -39,6 +39,7 @@ const ICONS = {
 };
 
 function isActivePath(pathname, href) {
+  if (!pathname || !href) return false;
   if (pathname === href) return true;
   if (href === "/admin" || href === "/sant") return false;
   return pathname.startsWith(`${href}/`);

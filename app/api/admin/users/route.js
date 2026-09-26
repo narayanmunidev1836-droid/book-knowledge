@@ -32,7 +32,7 @@ export async function POST(req) {
   if (error) return error;
 
   await connectDB();
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   const name = String(body?.name || "").trim();
   const email = String(body?.email || "").trim().toLowerCase();
   const mobile = String(body?.mobile || "").trim();

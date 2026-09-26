@@ -70,7 +70,9 @@ export default function BooksPage() {
         <div>
           <h1 className="text-xl font-bold">Books</h1>
           <p className="text-sm text-slate-500">
-            Click a book to see all its related entries — total {books.length}
+            Click a book to see all its records — {books.length} book
+            {books.length === 1 ? "" : "s"},{" "}
+            {books.reduce((n, b) => n + (b.entryCount || 0), 0)} records
           </p>
         </div>
         <button type="button" onClick={() => setShowAdd(true)} className="btn-primary">
@@ -160,6 +162,10 @@ export default function BooksPage() {
                     {book.category && (
                       <p className="text-xs font-medium text-emerald-600">{book.category}</p>
                     )}
+                    <span className="mt-1 inline-flex w-fit rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                      {book.entryCount || 0}{" "}
+                      {book.entryCount === 1 ? "record" : "records"}
+                    </span>
                     <p className="mt-1 text-xs font-medium text-emerald-500">
                       View related entries →
                     </p>
