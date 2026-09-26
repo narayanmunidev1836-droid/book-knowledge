@@ -1,0 +1,154 @@
+1. Main Features
+👤 Santo Login
+
+દરેક સંત માટે login રહેશે.
+
+Mobile/Email + Password
+Admin login અલગ
+સંતનું નામ/profile
+પોતે upload કરેલી entries જોઈ શકે
+📚 Book Entry
+
+સંત કોઈ book વાંચે ત્યારે:
+
+Book Name
+Author
+Publisher — optional
+Book Cover — optional
+Language — Gujarati / Hindi / English / Sanskrit
+Book Category — optional
+
+એકવાર book add કર્યા પછી એ book ફરીથી select કરી શકાય.
+
+2. 📖 Topic / Vishay
+
+Image upload કરતી વખતે:
+
+Book: Vachanamrut
+Topic: Bhakti
+Page: 125
+Image: uploaded image
+Short Note: optional
+
+Topics predefined રાખી શકાય:
+
+Bhakti
+Satsang
+Seva
+Vairagya
+Dharma
+Niyam
+Guru Bhakti
+Ekantik Dharma
+Sadhuta
+Ahimsa
+Prarthana
+Katha
+Yuva
+Bal Satsang
+
+અને New Topic પણ add કરી શકાય.
+
+3. 📸 Image Upload
+
+સંત કોઈ topic વાંચે અને તેને useful passage મળે તો તેનો ફોટો upload કરે.
+
+Example:
+
+Book: Swamini Vato
+Topic: Guru Bhakti
+Page: 87
+Image: 📷
+Note: “આ વાત ગુરુભક્તિ વિશે ખૂબ સુંદર છે.”
+
+એક topic માટે multiple images upload કરી શકાય.
+
+4. 🔎 Topic-wise Search
+
+આ projectનું સૌથી important screen:
+
+Select Topic
+
+[ Guru Bhakti ▼ ]
+
+પછી:
+
+Guru Bhakti
+────────────────────────────
+
+📖 Swamini Vato
+Page 87
+
+[ Image ]
+
+📖 Satsang Diksha
+Page 42
+
+[ Image ]
+
+📖 Satsang Prasango
+Page 118
+
+[ Image ]
+
+એટલે સંત Guru Bhakti select કરે એટલે આ topic હેઠળ upload થયેલા બધા books અને images દેખાશે.
+
+5. Image Gallery
+
+Desktop પર:
+
+┌────────────┐ ┌────────────┐ ┌────────────┐
+│            │ │            │ │            │
+│   IMAGE    │ │   IMAGE    │ │   IMAGE    │
+│            │ │            │ │            │
+├────────────┤ ├────────────┤ ├────────────┤
+│ Swamini    │ │ Vachanamrut│ │ Satsang    │
+│ Vato       │ │            │ │ Prasango   │
+│ Page 87    │ │ Page 125   │ │ Page 42    │
+└────────────┘ └────────────┘ └────────────┘
+
+Image પર click કરતાં full-screen image viewer ખુલશે.
+
+Mobile પર cards one-by-one દેખાશે.
+
+6. Admin Panel
+
+Admin માટે અલગ dashboard રાખવું.
+
+Dashboard
+
+Total Saints       25
+Total Books        180
+Total Topics       42
+Total Images       1,250
+
+Recent Uploads
+────────────────────────
+Swami X | Swamini Vato | Guru Bhakti
+Swami Y | Vachanamrut  | Bhakti
+Swami Z | Satsang...   | Seva
+
+Admin કરી શકે:
+
+Sant add/remove
+Book add/edit/delete
+Topic add/edit/delete
+Image delete
+Image edit
+Search
+Upload history
+User permissions
+
+7. Recommended Technology
+
+તમારા માટે હું આ stack રાખીશ:
+
+Next.js 15/16
+     │
+     ├── App Router
+     │
+     ├── Tailwind CSS
+     │
+     ├── NextAuth/Auth.js
+     │
+     ├── MongoDB Atlas
