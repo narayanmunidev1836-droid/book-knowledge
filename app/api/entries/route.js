@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { Entry, Book, Topic } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
@@ -5,6 +6,15 @@ import { processEntryImage } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
+
+// aggregate() does not cast values like find() does — ids must be ObjectIds.
+function toOid(value) {
+  try {
+    return new mongoose.Types.ObjectId(String(value));
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(req) {
   const { user, error } = await requireRole("sant", "admin");
@@ -16,9 +26,14 @@ export async function GET(req) {
   const q = searchParams.get("q");
 
   // Entries are strictly per user — admins don't get to browse them either.
-  const filter = { uploadedBy: user.id };
+  const userId = toOid(user.id);
+  if (!userId) return Response.json([]);
+  const filter = { uploadedBy: userId };
   const clauses = [];
-  if (topicId) clauses.push({ $or: [{ topic: topicId }, { topics: topicId }] });
+  if (topicId) {
+    const oid = toOid(topicId);
+    if (oid) clauses.push({ $or: [{ topic: oid }, { topics: oid }] });
+  }
   if (q) {
     const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     clauses.push({
