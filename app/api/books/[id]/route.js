@@ -14,6 +14,16 @@ async function loadOwnBook(id, userId) {
   }
 }
 
+export async function GET(req, { params }) {
+  const { user, error } = await requireRole("sant", "admin");
+  if (error) return error;
+
+  const { id } = await params;
+  const book = await loadOwnBook(id, user.id);
+  if (!book) return Response.json({ error: "Book not found" }, { status: 404 });
+  return Response.json(toPlain(book));
+}
+
 export async function PUT(req, { params }) {
   const { user, error } = await requireRole("sant", "admin");
   if (error) return error;

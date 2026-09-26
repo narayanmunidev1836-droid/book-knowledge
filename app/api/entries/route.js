@@ -23,6 +23,7 @@ export async function GET(req) {
   await connectDB();
   const { searchParams } = new URL(req.url);
   const topicId = searchParams.get("topicId");
+  const bookId = searchParams.get("bookId");
   const q = searchParams.get("q");
 
   // Entries are strictly per user — admins don't get to browse them either.
@@ -33,6 +34,10 @@ export async function GET(req) {
   if (topicId) {
     const oid = toOid(topicId);
     if (oid) clauses.push({ $or: [{ topic: oid }, { topics: oid }] });
+  }
+  if (bookId) {
+    const oid = toOid(bookId);
+    if (oid) clauses.push({ book: oid });
   }
   if (q) {
     const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");

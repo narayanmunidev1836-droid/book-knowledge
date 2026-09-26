@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Select } from "antd";
 import {
   EditOutlined,
@@ -69,7 +70,7 @@ export default function BooksPage() {
         <div>
           <h1 className="text-xl font-bold">Books</h1>
           <p className="text-sm text-slate-500">
-            Added books can be selected again while creating entries — total {books.length}
+            Click a book to see all its related entries — total {books.length}
           </p>
         </div>
         <button type="button" onClick={() => setShowAdd(true)} className="btn-primary">
@@ -129,47 +130,56 @@ export default function BooksPage() {
             ) : (
               <div
                 key={book._id}
-                className="card card-hover flex items-start gap-3 p-4"
+                className="card card-hover flex flex-col gap-3 p-4"
               >
-                <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                  {book.cover ? (
-                    <Image
-                      src={book.cover}
-                      alt={book.name}
-                      fill
-                      sizes="48px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-emerald-400">
-                      <BookOutlined />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-slate-800">{book.name}</p>
-                  <p className="text-sm text-slate-500">
-                    {book.author || "No author"} · {book.language}
-                  </p>
-                  {book.category && (
-                    <p className="text-xs font-medium text-emerald-600">{book.category}</p>
-                  )}
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditing(book)}
-                      className="icon-btn border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                    >
-                      <EditOutlined /> Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(book)}
-                      className="icon-btn border border-red-200 text-red-600 hover:bg-red-50"
-                    >
-                      <DeleteOutlined /> Delete
-                    </button>
+                <Link
+                  href={`/sant/books/${book._id}`}
+                  title="View entries of this book"
+                  className="flex items-start gap-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                >
+                  <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                    {book.cover ? (
+                      <Image
+                        src={book.cover}
+                        alt={book.name}
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-emerald-400">
+                        <BookOutlined />
+                      </div>
+                    )}
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-slate-800">{book.name}</p>
+                    <p className="text-sm text-slate-500">
+                      {book.author || "No author"} · {book.language}
+                    </p>
+                    {book.category && (
+                      <p className="text-xs font-medium text-emerald-600">{book.category}</p>
+                    )}
+                    <p className="mt-1 text-xs font-medium text-emerald-500">
+                      View related entries →
+                    </p>
+                  </div>
+                </Link>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditing(book)}
+                    className="icon-btn border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    <EditOutlined /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(book)}
+                    className="icon-btn border border-red-200 text-red-600 hover:bg-red-50"
+                  >
+                    <DeleteOutlined /> Delete
+                  </button>
                 </div>
               </div>
             )
