@@ -8,8 +8,10 @@ import {
   Loading3QuartersOutlined,
   PlusOutlined,
   PictureOutlined,
+  ScissorOutlined,
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
+import ImageCropper from "@/components/ImageCropper";
 
 export default function EntryForm({ onAddBook, newBook }) {
   const router = useRouter();
@@ -26,6 +28,7 @@ export default function EntryForm({ onAddBook, newBook }) {
   const [newTopicOpen, setNewTopicOpen] = useState(false);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
+  const [cropOpen, setCropOpen] = useState(false);
   const [message, setMessage] = useState(null);
   const [pending, setPending] = useState(false);
   const [prevNewBook, setPrevNewBook] = useState(null);
@@ -74,10 +77,31 @@ export default function EntryForm({ onAddBook, newBook }) {
         text: "Large photo optimized for upload (clarity preserved)",
       });
     }
+    // Open the crop dialog right away
+    if (file) setCropOpen(true);
+    else setCropOpen(false);
+  }
+
+  function discardImage() {
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    previewRef.current = null;
+    setImage(null);
+    setPreview("");
+    setCropOpen(false);
   }
 
   function set(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function applyCropped(file) {
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    const url = URL.createObjectURL(file);
+    previewRef.current = url;
+    setImage(file);
+    setPreview(url);
+    setCropOpen(false);
+    setMessage({ type: "ok", text: "Image cropped ✓" });
   }
 
   function handleBookChange(value) {
@@ -171,6 +195,15 @@ export default function EntryForm({ onAddBook, newBook }) {
             onChange={handleBookChange}
             placeholder="— Select book —"
             className="select-input w-full"
+            showSearch
+            optionFilterProp="label"
+            filterOption={(input, option) =>
+              option?.value === "__add__" ||
+              String(option?.label || "")
+                .toLowerCase()
+                .includes(String(input).toLowerCase())
+            }
+            notFoundContent="No book found — type to search"
             options={[
               { value: "__add__", label: "+ Add Book" },
               ...books.map((b) => ({
@@ -199,8 +232,17 @@ export default function EntryForm({ onAddBook, newBook }) {
             mode="multiple"
             value={form.topicIds}
             onChange={handleTopicsChange}
-            placeholder="— Select one or more topics —"
+            placeholder="— Type to search topics —"
             className="select-input w-full"
+            showSearch
+            optionFilterProp="label"
+            filterOption={(input, option) =>
+              option?.value === "__new__" ||
+              String(option?.label || "")
+                .toLowerCase()
+                .includes(String(input).toLowerCase())
+            }
+            notFoundContent="No topic found — type to search"
             options={[
               ...topics.map((t) => ({ value: t._id, label: t.name })),
               { value: "__new__", label: "+ New topic" },
@@ -262,9 +304,33 @@ export default function EntryForm({ onAddBook, newBook }) {
       </div>
 
       {preview && (
-        <div className="relative h-48 w-48 overflow-hidden rounded-xl border border-emerald-200 shadow-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="Preview" className="h-full w-full object-cover" />
+        <div className="flex items-start gap-3">
+          <div className="relative h-48 w-48 overflow-hidden rounded-xl border border-emerald-200 shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={preview} alt="Preview" className="h-full w-full object-cover" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setCropOpen(true)}
+              className="btn-ghost"
+            >
+              <ScissorOutlined /> Crop image
+            </button>
+            <p className="max-w-[16rem] text-xs text-slate-500">
+              The crop tool opens automatically when you pick an image — only
+              the part you keep gets stored. Skip it and the full image is saved
+              as-is.
+            </p>
+          </div>
+          <ImageCropper
+            open={cropOpen}
+            src={preview}
+            fileName={image?.name}
+            onCancel={discardImage}
+            onUseFull={() => setCropOpen(false)}
+            onConfirm={applyCropped}
+          />
         </div>
       )}
 

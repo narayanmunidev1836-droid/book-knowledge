@@ -8,7 +8,7 @@ const links = [
   { href: "/sant/entry", label: "New Entry" },
   { href: "/sant/books", label: "Books" },
   { href: "/sant/topics", label: "Topics" },
-  { href: "/sant/search", label: "Topic Search" },
+  { href: "/sant/search", label: "Search" },
   { href: "/sant/gallery", label: "Gallery" },
 ];
 

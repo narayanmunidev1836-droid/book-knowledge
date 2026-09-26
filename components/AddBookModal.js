@@ -6,8 +6,10 @@ import {
   SaveOutlined,
   Loading3QuartersOutlined,
   PlusCircleOutlined,
+  ScissorOutlined,
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
+import ImageCropper from "@/components/ImageCropper";
 
 const LANGUAGES = ["Gujarati", "Hindi", "English", "Sanskrit"];
 
@@ -20,6 +22,8 @@ export default function AddBookModal({ onClose, onCreated }) {
     category: "",
   });
   const [cover, setCover] = useState(null);
+  const [coverPreview, setCoverPreview] = useState("");
+  const [cropOpen, setCropOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -34,6 +38,41 @@ export default function AddBookModal({ onClose, onCreated }) {
   function set(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
   }
+
+  async function handleCover(e) {
+    const raw = e.target.files?.[0] || null;
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    if (!raw) {
+      setCover(null);
+      setCoverPreview("");
+      return;
+    }
+    const file = await compressForUpload(raw);
+    setCover(file);
+    setCoverPreview(URL.createObjectURL(file));
+    // Open the crop dialog right away
+    setCropOpen(true);
+  }
+
+  function discardCover() {
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCover(null);
+    setCoverPreview("");
+    setCropOpen(false);
+  }
+
+  function applyCroppedCover(file) {
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCover(file);
+    setCoverPreview(URL.createObjectURL(file));
+    setCropOpen(false);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+    };
+  }, [coverPreview]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -130,11 +169,33 @@ export default function AddBookModal({ onClose, onCreated }) {
             <input
               type="file"
               accept="image/*"
-              onChange={async (e) => {
-                const raw = e.target.files?.[0] || null;
-                setCover(raw ? await compressForUpload(raw) : null);
-              }}
+              onChange={handleCover}
               className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
+            />
+            {coverPreview && (
+              <div className="mt-2 flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={coverPreview}
+                  alt="Cover preview"
+                  className="h-20 w-20 rounded-lg border border-emerald-200 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setCropOpen(true)}
+                  className="btn-ghost !py-1.5 text-xs"
+                >
+                  <ScissorOutlined /> Crop
+                </button>
+              </div>
+            )}
+            <ImageCropper
+              open={cropOpen}
+              src={coverPreview}
+              fileName={cover?.name}
+              onCancel={discardCover}
+              onUseFull={() => setCropOpen(false)}
+              onConfirm={applyCroppedCover}
             />
           </div>
         </div>
