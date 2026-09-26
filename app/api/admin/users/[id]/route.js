@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models";
 import { requireRole } from "@/lib/session";
+import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,13 @@ export async function PUT(req, { params }) {
   }
 
   await target.save();
+  await logActivity({
+    user: admin,
+    action: "user.update",
+    detail: target.name,
+    targetType: "user",
+    targetId: target._id,
+  });
   return Response.json({
     id: String(target._id),
     name: target.name,
@@ -54,5 +62,12 @@ export async function DELETE(req, { params }) {
   if (!target) return Response.json({ error: "User not found" }, { status: 404 });
 
   await target.deleteOne();
+  await logActivity({
+    user: admin,
+    action: "user.delete",
+    detail: target.name,
+    targetType: "user",
+    targetId: target._id,
+  });
   return Response.json({ ok: true });
 }

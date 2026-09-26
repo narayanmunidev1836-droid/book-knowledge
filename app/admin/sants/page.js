@@ -14,6 +14,7 @@ import {
 } from "@ant-design/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import PromptModal from "@/components/PromptModal";
+import Spinner from "@/components/Spinner";
 
 export default function AdminSantsPage() {
   const [users, setUsers] = useState([]);
@@ -175,7 +176,7 @@ export default function AdminSantsPage() {
       </form>
 
       {loading ? (
-        <p className="text-slate-500">Loading...</p>
+        <Spinner />
       ) : (
         <div className="card overflow-x-auto fade-up" style={{ animationDelay: "0.12s" }}>
           <table className="w-full text-left text-sm">

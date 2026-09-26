@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SearchOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import { SearchOutlined } from "@ant-design/icons";
 import { Select } from "antd";
 import GalleryGrid from "@/components/GalleryGrid";
+import Spinner from "@/components/Spinner";
 
 export default function TopicSearchPage() {
   const [topics, setTopics] = useState([]);
@@ -71,11 +72,7 @@ export default function TopicSearchPage() {
       )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {loading && (
-        <p className="flex items-center gap-2 text-slate-500">
-          <ClockCircleOutlined className="text-emerald-500" /> Searching...
-        </p>
-      )}
+      {loading && <Spinner label="Searching..." className="py-6" />}
       {!loading && topicId && <GalleryGrid entries={entries} />}
     </div>
   );

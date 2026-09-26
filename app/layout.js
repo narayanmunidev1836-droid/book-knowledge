@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import { getSettings } from "@/lib/settings";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -11,17 +12,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "Book Knowledge — Notes & Images for Sants",
-  description: "Platform for books, topics and image entries",
-  icons: {
-    icon: [
-      { url: "/icon.svg?v=2", type: "image/svg+xml" },
-      { url: "/favicon.ico?v=2", sizes: "any" },
-    ],
-    apple: "/apple-icon.png?v=2",
-  },
-};
+export async function generateMetadata() {
+  const settings = await getSettings();
+  return {
+    title: `${settings.siteName} — ${settings.tagline || "Notes & Images for Sants"}`,
+    description: "Platform for books, topics and image entries",
+    icons: {
+      icon: [
+        { url: "/icon.svg?v=2", type: "image/svg+xml" },
+        { url: "/favicon.ico?v=2", sizes: "any" },
+      ],
+      apple: "/apple-icon.png?v=2",
+    },
+  };
+}
 
 export default function RootLayout({ children }) {
   return (

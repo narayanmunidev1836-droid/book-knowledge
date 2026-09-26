@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models";
 import { requireRole } from "@/lib/session";
+import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const { error } = await requireRole("admin");
+  const { user: admin, error } = await requireRole("admin");
   if (error) return error;
 
   await connectDB();
@@ -62,6 +63,14 @@ export async function POST(req) {
     password: await bcrypt.hash(password, 10),
     role: "sant",
     active: true,
+  });
+
+  await logActivity({
+    user: admin,
+    action: "user.create",
+    detail: `${name} (${email || mobile})`,
+    targetType: "user",
+    targetId: user._id,
   });
 
   return Response.json(

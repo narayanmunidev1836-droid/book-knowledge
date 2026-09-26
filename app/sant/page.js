@@ -6,6 +6,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import GalleryGrid from "@/components/GalleryGrid";
 import ConfirmModal from "@/components/ConfirmModal";
 import PromptModal from "@/components/PromptModal";
+import Spinner from "@/components/Spinner";
 
 export default function SantDashboard() {
   const [entries, setEntries] = useState([]);
@@ -16,7 +17,7 @@ export default function SantDashboard() {
   const [noteText, setNoteText] = useState("");
 
   useEffect(() => {
-    fetch("/api/entries?mine=1")
+    fetch("/api/entries")
       .then((r) => r.json())
       .then((data) => {
         setEntries(Array.isArray(data) ? data : []);
@@ -75,7 +76,7 @@ export default function SantDashboard() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {loading ? (
-        <p className="text-slate-500">Loading...</p>
+        <Spinner />
       ) : (
         <div className="fade-up" style={{ animationDelay: "0.08s" }}>
           <GalleryGrid

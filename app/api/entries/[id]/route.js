@@ -2,13 +2,14 @@ import { connectDB } from "@/lib/mongodb";
 import { Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { removeUpload } from "@/lib/upload";
+import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
 
-async function loadEntry(id) {
+async function loadOwnEntry(id, userId) {
   await connectDB();
   try {
-    return await Entry.findById(id);
+    return await Entry.findOne({ _id: id, uploadedBy: userId });
   } catch {
     return null;
   }
@@ -19,12 +20,8 @@ export async function PUT(req, { params }) {
   if (error) return error;
 
   const { id } = await params;
-  const entry = await loadEntry(id);
+  const entry = await loadOwnEntry(id, user.id);
   if (!entry) return Response.json({ error: "Entry not found" }, { status: 404 });
-
-  if (user.role !== "admin" && String(entry.uploadedBy) !== user.id) {
-    return Response.json({ error: "You don't have permission for this" }, { status: 403 });
-  }
 
   const body = await req.json();
   if (typeof body.note === "string") entry.note = body.note.trim();
@@ -35,6 +32,13 @@ export async function PUT(req, { params }) {
     }
     entry.page = pageRaw ? Number(pageRaw) : undefined;
   }
+  await logActivity({
+    user,
+    action: "entry.update",
+    detail: `${entry.bookName} — note updated`,
+    targetType: "entry",
+    targetId: entry._id,
+  });
   await entry.save();
   return Response.json(toPlain(entry));
 }
@@ -44,13 +48,16 @@ export async function DELETE(req, { params }) {
   if (error) return error;
 
   const { id } = await params;
-  const entry = await loadEntry(id);
+  const entry = await loadOwnEntry(id, user.id);
   if (!entry) return Response.json({ error: "Entry not found" }, { status: 404 });
 
-  if (user.role !== "admin" && String(entry.uploadedBy) !== user.id) {
-    return Response.json({ error: "You don't have permission for this" }, { status: 403 });
-  }
-
+  await logActivity({
+    user,
+    action: "entry.delete",
+    detail: `${entry.bookName} — ${entry.topicName}${entry.page ? ` (p.${entry.page})` : ""}`,
+    targetType: "entry",
+    targetId: entry._id,
+  });
   await removeUpload(entry.image);
   await entry.deleteOne();
   return Response.json({ ok: true });

@@ -9,13 +9,12 @@ export async function GET() {
   if (error) return error;
 
   await connectDB();
-  const [totalSants, totalBooks, totalTopics, totalImages, recent] =
+  const [totalSants, totalBooks, totalTopics, totalImages] =
     await Promise.all([
       User.countDocuments({ role: "sant" }),
       Book.countDocuments(),
       Topic.countDocuments(),
       Entry.countDocuments(),
-      Entry.find().sort({ createdAt: -1 }).limit(10).lean(),
     ]);
 
   return Response.json({
@@ -23,6 +22,5 @@ export async function GET() {
     totalBooks,
     totalTopics,
     totalImages,
-    recent: JSON.parse(JSON.stringify(recent)),
   });
 }

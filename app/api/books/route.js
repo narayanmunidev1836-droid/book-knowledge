@@ -2,15 +2,18 @@ import { connectDB } from "@/lib/mongodb";
 import { Book } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { saveUpload } from "@/lib/upload";
+import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { error } = await requireRole("sant", "admin");
+  const { user, error } = await requireRole("sant", "admin");
   if (error) return error;
 
   await connectDB();
-  const books = await Book.find().sort({ name: 1 }).lean();
+  const books = await Book.find({ createdBy: user.id })
+    .sort({ name: 1 })
+    .lean();
   return Response.json(toPlain(books));
 }
 
@@ -34,9 +37,10 @@ export async function POST(req) {
     return Response.json({ error: "Invalid language" }, { status: 400 });
   }
 
-  const duplicate = await Book.findOne({ name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") });
+  const rx = new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
+  const duplicate = await Book.findOne({ createdBy: user.id, name: rx });
   if (duplicate) {
-    return Response.json({ error: "This book already exists" }, { status: 409 });
+    return Response.json({ error: "You already have this book" }, { status: 409 });
   }
 
   let cover = null;
@@ -58,5 +62,12 @@ export async function POST(req) {
     createdBy: user.id,
   });
 
+  await logActivity({
+    user,
+    action: "book.create",
+    detail: book.name,
+    targetType: "book",
+    targetId: book._id,
+  });
   return Response.json(toPlain(book), { status: 201 });
 }

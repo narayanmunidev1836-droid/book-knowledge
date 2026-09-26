@@ -17,17 +17,25 @@ import {
   PictureOutlined,
   FileAddOutlined,
   SearchOutlined,
+  LockOutlined,
+  BarChartOutlined,
+  LineChartOutlined,
+  HistoryOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 const ICONS = {
   "/admin": AppstoreOutlined,
   "/admin/sants": TeamOutlined,
-  "/admin/books": BookOutlined,
-  "/admin/topics": TagsOutlined,
-  "/admin/images": PictureOutlined,
+  "/admin/report": BarChartOutlined,
+  "/admin/analytics": LineChartOutlined,
+  "/admin/activity": HistoryOutlined,
+  "/admin/settings": SettingOutlined,
   "/sant": AppstoreOutlined,
   "/sant/entry": FileAddOutlined,
   "/sant/books": BookOutlined,
+  "/sant/topics": TagsOutlined,
   "/sant/search": SearchOutlined,
   "/sant/gallery": PictureOutlined,
 };
@@ -38,7 +46,7 @@ function isActivePath(pathname, href) {
   return pathname.startsWith(`${href}/`);
 }
 
-function Brand({ compact = false }) {
+function Brand({ compact = false, name = "Book Knowledge" }) {
   return (
     <Link href="/" className="flex items-center gap-2 font-bold whitespace-nowrap">
       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30">
@@ -46,7 +54,7 @@ function Brand({ compact = false }) {
       </span>
       {!compact && (
         <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-          Book Knowledge
+          {name}
         </span>
       )}
     </Link>
@@ -81,7 +89,7 @@ function SidebarLinks({ links, pathname, onNavigate }) {
   );
 }
 
-function UserBlock({ user }) {
+function UserBlock({ user, onChangePassword }) {
   return (
     <div className="border-t border-slate-100 p-3">
       <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
@@ -94,6 +102,13 @@ function UserBlock({ user }) {
       </div>
       <button
         type="button"
+        onClick={onChangePassword}
+        className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50 hover:text-emerald-800"
+      >
+        <LockOutlined /> Change password
+      </button>
+      <button
+        type="button"
         onClick={() => signOut({ callbackUrl: "/login" })}
         className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
       >
@@ -103,9 +118,10 @@ function UserBlock({ user }) {
   );
 }
 
-export default function Nav({ links, user }) {
+export default function Nav({ links, user, brandName }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [pwdOpen, setPwdOpen] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
 
   if (prevPathname !== pathname) {
@@ -118,10 +134,10 @@ export default function Nav({ links, user }) {
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-200 bg-white shadow-sm lg:flex">
         <div className="flex items-center border-b border-slate-100 px-4 py-4">
-          <Brand />
+          <Brand name={brandName} />
         </div>
         <SidebarLinks links={links} pathname={pathname} />
-        <UserBlock user={user} />
+        <UserBlock user={user} onChangePassword={() => setPwdOpen(true)} />
       </aside>
 
       {/* Mobile / tablet topbar with hamburger */}
@@ -134,7 +150,7 @@ export default function Nav({ links, user }) {
         >
           <MenuOutlined className="text-lg" />
         </button>
-        <Brand />
+        <Brand name={brandName} />
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/login" })}
@@ -164,7 +180,7 @@ export default function Nav({ links, user }) {
         }}
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
-          <Brand />
+          <Brand name={brandName} />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -179,8 +195,10 @@ export default function Nav({ links, user }) {
           pathname={pathname}
           onNavigate={() => setOpen(false)}
         />
-        <UserBlock user={user} />
+        <UserBlock user={user} onChangePassword={() => setPwdOpen(true)} />
       </Drawer>
+
+      <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />
     </>
   );
 }

@@ -10,8 +10,9 @@ import {
   TagsOutlined,
 } from "@ant-design/icons";
 import ConfirmModal from "@/components/ConfirmModal";
+import Spinner from "@/components/Spinner";
 
-export default function AdminTopicsPage() {
+export default function SantTopicsPage() {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
@@ -79,13 +80,22 @@ export default function AdminTopicsPage() {
   return (
     <div className="space-y-5">
       <div className="fade-up">
-        <h1 className="text-xl font-bold">Topics</h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30">
+            <TagsOutlined />
+          </span>
+          My Topics
+        </h1>
         <p className="text-sm text-slate-500">
-          Predefined and new topics — total {topics.length}
+          Topics you created — total {topics.length}
         </p>
       </div>
 
-      <form onSubmit={handleAdd} className="flex max-w-md gap-2 fade-up" style={{ animationDelay: "0.06s" }}>
+      <form
+        onSubmit={handleAdd}
+        className="flex max-w-md gap-2 fade-up"
+        style={{ animationDelay: "0.06s" }}
+      >
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -111,7 +121,7 @@ export default function AdminTopicsPage() {
       )}
 
       {loading ? (
-        <p className="text-slate-500">Loading...</p>
+        <Spinner />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {topics.map((topic, i) => (
@@ -129,7 +139,9 @@ export default function AdminTopicsPage() {
                     <div className="flex gap-2">
                       <input
                         value={editing.name}
-                        onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                        onChange={(e) =>
+                          setEditing({ ...editing, name: e.target.value })
+                        }
                         className="input !py-1"
                         autoFocus
                       />
@@ -151,14 +163,9 @@ export default function AdminTopicsPage() {
                       </button>
                     </div>
                   ) : (
-                    <>
-                      <p className="truncate font-semibold text-emerald-700">
-                        {topic.name}
-                      </p>
-                      {topic.predefined && (
-                        <p className="text-xs text-slate-400">Predefined</p>
-                      )}
-                    </>
+                    <p className="truncate font-semibold text-emerald-700">
+                      {topic.name}
+                    </p>
                   )}
                 </div>
               </div>
@@ -184,6 +191,11 @@ export default function AdminTopicsPage() {
               )}
             </div>
           ))}
+          {topics.length === 0 && !loading && (
+            <p className="text-sm text-slate-500">
+              No topics yet — add your first one above.
+            </p>
+          )}
         </div>
       )}
 
@@ -192,7 +204,7 @@ export default function AdminTopicsPage() {
         title="Delete Topic"
         message={
           deleteTarget
-            ? `"${deleteTarget.name}" will be deleted. Images tagged only with this topic will be deleted.`
+            ? `"${deleteTarget.name}" will be deleted. Your images tagged only with this topic will be deleted too.`
             : ""
         }
         confirmText="Delete"

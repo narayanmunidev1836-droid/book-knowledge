@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import AddBookModal from "@/components/AddBookModal";
 import ConfirmModal from "@/components/ConfirmModal";
+import Spinner from "@/components/Spinner";
 
 const LANGUAGES = ["Gujarati", "Hindi", "English", "Sanskrit"];
 
@@ -79,7 +80,7 @@ export default function BooksPage() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {loading ? (
-        <p className="text-slate-500">Loading...</p>
+        <Spinner />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {books.map((book) =>

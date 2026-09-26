@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PictureOutlined, FilterOutlined } from "@ant-design/icons";
 import { Select } from "antd";
 import GalleryGrid from "@/components/GalleryGrid";
+import Spinner from "@/components/Spinner";
 
 export default function GalleryPage() {
   const [topics, setTopics] = useState([]);
@@ -60,7 +61,7 @@ export default function GalleryPage() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {loading ? (
-        <p className="text-slate-500">Loading...</p>
+        <Spinner />
       ) : (
         <div className="fade-up" style={{ animationDelay: "0.08s" }}>
           <GalleryGrid entries={entries} />
