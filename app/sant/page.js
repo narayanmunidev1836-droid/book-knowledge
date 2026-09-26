@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PlusOutlined } from "@ant-design/icons";
 import GalleryGrid from "@/components/GalleryGrid";
 import ConfirmModal from "@/components/ConfirmModal";
-import PromptModal from "@/components/PromptModal";
+import EntryEditModal from "@/components/EntryEditModal";
 import Spinner from "@/components/Spinner";
 
 export default function SantDashboard() {
@@ -14,7 +14,6 @@ export default function SantDashboard() {
   const [error, setError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
-  const [noteText, setNoteText] = useState("");
 
   useEffect(() => {
     fetch("/api/entries")
@@ -36,17 +35,28 @@ export default function SantDashboard() {
     setEntries((list) => list.filter((e) => e._id !== deleteTarget._id));
   }
 
-  async function handleEdit() {
+  async function handleEdit(payload) {
     const res = await fetch(`/api/entries/${editTarget._id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ note: noteText }),
+      body: payload, // FormData — note, removeIndices and any new images
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "Update failed");
     setError("");
+    const count = json.imageCount || 0;
     setEntries((list) =>
-      list.map((e) => (e._id === json._id ? { ...e, note: json.note } : e))
+      list.map((e) =>
+        e._id === json._id
+          ? {
+              ...e,
+              note: json.note,
+              image: json.image,
+              thumb: json.thumb,
+              imageCount: count,
+              hasFull: count > 0,
+            }
+          : e
+      )
     );
   }
 
@@ -82,10 +92,7 @@ export default function SantDashboard() {
           <GalleryGrid
             entries={entries}
             onDelete={(entry) => setDeleteTarget(entry)}
-            onEdit={(entry) => {
-              setEditTarget(entry);
-              setNoteText(entry.note || "");
-            }}
+            onEdit={(entry) => setEditTarget(entry)}
           />
         </div>
       )}
@@ -103,15 +110,9 @@ export default function SantDashboard() {
         onConfirm={handleDelete}
       />
 
-      <PromptModal
+      <EntryEditModal
         open={!!editTarget}
-        title="Edit Note"
-        label="Note"
-        value={noteText}
-        onChange={setNoteText}
-        placeholder="Write a short note..."
-        type="textarea"
-        confirmText="Save"
+        entry={editTarget}
         onClose={() => setEditTarget(null)}
         onSubmit={handleEdit}
       />

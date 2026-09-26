@@ -8,14 +8,15 @@ import {
   Loading3QuartersOutlined,
   PlusOutlined,
   PictureOutlined,
-  ScissorOutlined,
+  ExpandOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
-import ImageCropper from "@/components/ImageCropper";
+import ImageResizer from "@/components/ImageResizer";
 
 export default function EntryForm({ onAddBook, newBook }) {
   const router = useRouter();
-  const previewRef = useRef(null);
   const [books, setBooks] = useState([]);
   const [topics, setTopics] = useState([]);
   const [form, setForm] = useState({
@@ -26,12 +27,14 @@ export default function EntryForm({ onAddBook, newBook }) {
   });
   const [newTopic, setNewTopic] = useState("");
   const [newTopicOpen, setNewTopicOpen] = useState(false);
-  const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState("");
-  const [cropOpen, setCropOpen] = useState(false);
+  const [images, setImages] = useState([]); // File[]
+  const [previews, setPreviews] = useState([]); // object URLs, index-matched
+  const [cropQueue, setCropQueue] = useState([]); // indices waiting to be cropped
   const [message, setMessage] = useState(null);
   const [pending, setPending] = useState(false);
   const [prevNewBook, setPrevNewBook] = useState(null);
+  // The head of the queue is the image currently open in the crop dialog.
+  const cropIdx = cropQueue.length ? cropQueue[0] : null;
 
   if (newBook && newBook !== prevNewBook) {
     setPrevNewBook(newBook);
@@ -57,50 +60,86 @@ export default function EntryForm({ onAddBook, newBook }) {
 
   useEffect(() => {
     return () => {
-      if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+      previews.forEach((url) => URL.revokeObjectURL(url));
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleImage(e) {
-    const raw = e.target.files?.[0] || null;
-    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
-    const url = raw ? URL.createObjectURL(raw) : "";
-    previewRef.current = url;
-    setPreview(url);
-    setMessage(null);
+  // One-by-one crop queue: every newly picked image opens the crop dialog
+  // in turn; closing it moves on to the next.
 
-    const file = raw ? await compressForUpload(raw) : null;
-    setImage(file);
-    if (raw && file !== raw) {
-      setMessage({
-        type: "ok",
-        text: "Large photo optimized for upload (clarity preserved)",
-      });
-    }
-    // Open the crop dialog right away
-    if (file) setCropOpen(true);
-    else setCropOpen(false);
+  function revokeAt(list, i) {
+    const url = list[i];
+    if (url) URL.revokeObjectURL(url);
   }
 
-  function discardImage() {
-    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
-    previewRef.current = null;
-    setImage(null);
-    setPreview("");
-    setCropOpen(false);
+  async function handleImage(e) {
+    const picked = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!picked.length) return;
+    setMessage(null);
+
+    const room = Math.max(0, 10 - images.length);
+    const files = picked.slice(0, room);
+    if (files.length < picked.length) {
+      setMessage({ type: "error", text: "Maximum 10 images per entry" });
+    }
+    if (!files.length) return;
+
+    const optimized = [];
+    let optimizedAny = false;
+    for (const f of files) {
+      const out = await compressForUpload(f);
+      if (out !== f) optimizedAny = true;
+      optimized.push(out);
+    }
+    const start = images.length;
+    setImages((list) => [...list, ...optimized]);
+    setPreviews((list) => [
+      ...list,
+      ...optimized.map((f) => URL.createObjectURL(f)),
+    ]);
+    setCropQueue((q) => [...q, ...optimized.map((_, i) => start + i)]);
+    if (optimizedAny) {
+      setMessage({
+        type: "ok",
+        text: "Large photos optimized for upload (clarity preserved)",
+      });
+    }
+  }
+
+  function removeImageAt(i) {
+    setPreviews((list) => {
+      revokeAt(list, i);
+      return list.filter((_, k) => k !== i);
+    });
+    setImages((list) => list.filter((_, k) => k !== i));
+    setCropQueue((q) =>
+      q.filter((x) => x !== i).map((x) => (x > i ? x - 1 : x))
+    );
+  }
+
+  function replaceImageAt(i, file) {
+    setPreviews((list) => {
+      revokeAt(list, i);
+      const next = [...list];
+      next[i] = URL.createObjectURL(file);
+      return next;
+    });
+    setImages((list) => {
+      const next = [...list];
+      next[i] = file;
+      return next;
+    });
   }
 
   function set(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function applyCropped(file) {
-    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
-    const url = URL.createObjectURL(file);
-    previewRef.current = url;
-    setImage(file);
-    setPreview(url);
-    setCropOpen(false);
+  function applyResized(file) {
+    if (cropIdx !== null) replaceImageAt(cropIdx, file);
+    setCropQueue((q) => q.slice(1));
     setMessage({ type: "ok", text: "Image cropped ✓" });
   }
 
@@ -148,18 +187,13 @@ export default function EntryForm({ onAddBook, newBook }) {
       setMessage({ type: "error", text: "Select book and at least one topic" });
       return;
     }
-    if (!image) {
-      setMessage({ type: "error", text: "Choose an image" });
-      return;
-    }
-
     setPending(true);
     const data = new FormData();
     data.append("bookId", form.bookId);
     form.topicIds.forEach((id) => data.append("topicId", id));
     data.append("page", form.page);
     data.append("note", form.note);
-    data.append("image", image);
+    images.forEach((file) => data.append("image", file));
 
     const res = await fetch("/api/entries", { method: "POST", body: data });
     const json = await res.json();
@@ -172,10 +206,10 @@ export default function EntryForm({ onAddBook, newBook }) {
 
     setMessage({ type: "ok", text: "Entry saved ✓" });
     setForm({ bookId: "", topicIds: [], page: "", note: "" });
-    setImage(null);
-    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
-    previewRef.current = null;
-    setPreview("");
+    previews.forEach((url) => URL.revokeObjectURL(url));
+    setImages([]);
+    setPreviews([]);
+    setCropQueue([]);
     e.target.reset?.();
     router.refresh();
   }
@@ -281,14 +315,16 @@ export default function EntryForm({ onAddBook, newBook }) {
         </div>
 
         <div>
-          <label className="label">Image *</label>
+          <label className="label">Images (optional)</label>
           <input
             type="file"
             accept="image/*"
+            multiple
             capture="environment"
             onChange={handleImage}
             className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
           />
+          <p className="mt-1 text-xs text-slate-500">Up to 10 photos</p>
         </div>
       </div>
 
@@ -303,34 +339,57 @@ export default function EntryForm({ onAddBook, newBook }) {
         />
       </div>
 
-      {preview && (
-        <div className="flex items-start gap-3">
-          <div className="relative h-48 w-48 overflow-hidden rounded-xl border border-emerald-200 shadow-sm">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={preview} alt="Preview" className="h-full w-full object-cover" />
+      {previews.length > 0 && (
+        <div className="space-y-2">
+          <label className="label">
+            Images ({previews.length}/10)
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {previews.map((url, i) => (
+              <div
+                key={`${i}-${url.slice(-40)}`}
+                className="relative h-24 w-24 overflow-hidden rounded-xl border border-emerald-200 shadow-sm"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`Preview ${i + 1}`} className="h-full w-full object-cover" />
+                <div className="absolute inset-x-0 bottom-0 flex justify-center gap-1.5 bg-black/55 p-1">
+                  <button
+                    type="button"
+                    title="Crop & resize"
+                    onClick={() =>
+                      setCropQueue((q) => [i, ...q.filter((x) => x !== i)])
+                    }
+                    className="flex h-6 w-6 items-center justify-center rounded-md bg-white/95 text-xs text-emerald-700 transition hover:bg-white"
+                  >
+                    <EditOutlined />
+                  </button>
+                  <button
+                    type="button"
+                    title="Remove image"
+                    onClick={() => removeImageAt(i)}
+                    className="flex h-6 w-6 items-center justify-center rounded-md bg-white/95 text-xs text-red-600 transition hover:bg-white"
+                  >
+                    <DeleteOutlined />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => setCropOpen(true)}
-              className="btn-ghost"
-            >
-              <ScissorOutlined /> Crop image
-            </button>
-            <p className="max-w-[16rem] text-xs text-slate-500">
-              The crop tool opens automatically when you pick an image — only
-              the part you keep gets stored. Skip it and the full image is saved
-              as-is.
-            </p>
-          </div>
-          <ImageCropper
-            open={cropOpen}
-            src={preview}
-            fileName={image?.name}
-            onCancel={discardImage}
-            onUseFull={() => setCropOpen(false)}
-            onConfirm={applyCropped}
-          />
+          <p className="text-xs text-slate-500">
+            The crop tool opens automatically for each picked image — drag the
+            four corners to select the area you want. Skip it and the full
+            image is saved as-is. Crop any image again with the edit button.
+          </p>
+          {cropIdx !== null && previews[cropIdx] && (
+            <ImageResizer
+              open
+              src={previews[cropIdx]}
+              fileName={images[cropIdx]?.name}
+              onCancel={() => cropIdx !== null && removeImageAt(cropIdx)}
+              onUseOriginal={() => setCropQueue((q) => q.slice(1))}
+              onConfirm={applyResized}
+            />
+          )}
         </div>
       )}
 

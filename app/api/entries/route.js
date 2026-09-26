@@ -68,7 +68,22 @@ export async function GET(req) {
         uploadedByName: 1,
         createdAt: 1,
         thumb: 1,
-        hasFull: { $cond: [{ $ifNull: ["$thumb", false] }, true, false] },
+        // Only the first thumb travels with the list — the rest of the full
+        // images are fetched per-entry from GET /api/entries/[id].
+        imageCount: {
+          $cond: [
+            { $gt: [{ $size: { $ifNull: ["$images", []] } }, 0] },
+            { $size: "$images" },
+            { $cond: [{ $gt: [{ $strLenCP: { $ifNull: ["$image", ""] } }, 0] }, 1, 0] },
+          ],
+        },
+        hasFull: {
+          $cond: [
+            { $gt: [{ $size: { $ifNull: ["$images", []] } }, 0] },
+            true,
+            { $gt: [{ $strLenCP: { $ifNull: ["$image", ""] } }, 0] },
+          ],
+        },
         image: {
           $cond: [{ $ifNull: ["$thumb", false] }, "$thumb", "$image"],
         },
@@ -88,13 +103,15 @@ export async function POST(req) {
   const topicIds = [...new Set(form.getAll("topicId").map(String).filter(Boolean))];
   const pageRaw = String(form.get("page") || "").trim();
   const note = String(form.get("note") || "").trim();
-  const imageFile = form.get("image");
 
   if (!bookId || !topicIds.length) {
     return Response.json({ error: "Book and at least one topic are required" }, { status: 400 });
   }
-  if (!imageFile || typeof imageFile === "string" || imageFile.size === 0) {
-    return Response.json({ error: "Image is required" }, { status: 400 });
+  const imageFiles = form
+    .getAll("image")
+    .filter((f) => f && typeof f !== "string" && f.size > 0);
+  if (imageFiles.length > 10) {
+    return Response.json({ error: "Maximum 10 images per entry" }, { status: 400 });
   }
   if (pageRaw && Number.isNaN(Number(pageRaw))) {
     return Response.json({ error: "Invalid page number" }, { status: 400 });
@@ -116,11 +133,21 @@ export async function POST(req) {
   }
   const ordered = topicIds.map((id) => topics.find((t) => String(t._id) === id));
 
-  let processed;
-  try {
-    processed = await processEntryImage(imageFile);
-  } catch (e) {
-    return Response.json({ error: e.message }, { status: 400 });
+  let processed = [];
+  if (imageFiles.length) {
+    // Keep the whole set safely under Mongo's 16MB document limit.
+    const perImage = Math.min(
+      6 * 1024 * 1024,
+      Math.floor((14 * 1024 * 1024) / imageFiles.length)
+    );
+    try {
+      for (const file of imageFiles) {
+        const one = await processEntryImage(file, { maxBytes: perImage });
+        if (one) processed.push(one);
+      }
+    } catch (e) {
+      return Response.json({ error: e.message }, { status: 400 });
+    }
   }
 
   const entry = await Entry.create({
@@ -131,8 +158,10 @@ export async function POST(req) {
     topics: ordered.map((t) => t._id),
     topicNames: ordered.map((t) => t.name),
     page: pageRaw ? Number(pageRaw) : undefined,
-    image: processed.image,
-    thumb: processed.thumb,
+    image: processed[0]?.image || "",
+    thumb: processed[0]?.thumb || undefined,
+    images: processed.map((p) => p.image),
+    thumbs: processed.map((p) => p.thumb),
     note,
     uploadedBy: user.id,
     uploadedByName: user.name,

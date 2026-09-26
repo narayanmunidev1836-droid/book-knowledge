@@ -6,10 +6,10 @@ import {
   SaveOutlined,
   Loading3QuartersOutlined,
   PlusCircleOutlined,
-  ScissorOutlined,
+  ExpandOutlined,
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
-import ImageCropper from "@/components/ImageCropper";
+import ImageResizer from "@/components/ImageResizer";
 
 const LANGUAGES = ["Gujarati", "Hindi", "English", "Sanskrit"];
 
@@ -23,7 +23,7 @@ export default function AddBookModal({ onClose, onCreated }) {
   });
   const [cover, setCover] = useState(null);
   const [coverPreview, setCoverPreview] = useState("");
-  const [cropOpen, setCropOpen] = useState(false);
+  const [resizeOpen, setResizeOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -50,22 +50,22 @@ export default function AddBookModal({ onClose, onCreated }) {
     const file = await compressForUpload(raw);
     setCover(file);
     setCoverPreview(URL.createObjectURL(file));
-    // Open the crop dialog right away
-    setCropOpen(true);
+    // Open the resize dialog right away
+    setResizeOpen(true);
   }
 
   function discardCover() {
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCover(null);
     setCoverPreview("");
-    setCropOpen(false);
+    setResizeOpen(false);
   }
 
-  function applyCroppedCover(file) {
+  function applyResizedCover(file) {
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCover(file);
     setCoverPreview(URL.createObjectURL(file));
-    setCropOpen(false);
+    setResizeOpen(false);
   }
 
   useEffect(() => {
@@ -182,20 +182,20 @@ export default function AddBookModal({ onClose, onCreated }) {
                 />
                 <button
                   type="button"
-                  onClick={() => setCropOpen(true)}
+                  onClick={() => setResizeOpen(true)}
                   className="btn-ghost !py-1.5 text-xs"
                 >
-                  <ScissorOutlined /> Crop
+                  <ExpandOutlined /> Resize
                 </button>
               </div>
             )}
-            <ImageCropper
-              open={cropOpen}
+            <ImageResizer
+              open={resizeOpen}
               src={coverPreview}
               fileName={cover?.name}
               onCancel={discardCover}
-              onUseFull={() => setCropOpen(false)}
-              onConfirm={applyCroppedCover}
+              onUseOriginal={() => setResizeOpen(false)}
+              onConfirm={applyResizedCover}
             />
           </div>
         </div>
