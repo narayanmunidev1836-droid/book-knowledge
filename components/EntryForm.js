@@ -9,6 +9,7 @@ import {
   PlusOutlined,
   PictureOutlined,
 } from "@ant-design/icons";
+import { compressForUpload } from "@/lib/clientCompress";
 
 export default function EntryForm({ onAddBook, newBook }) {
   const router = useRouter();
@@ -57,13 +58,22 @@ export default function EntryForm({ onAddBook, newBook }) {
     };
   }, []);
 
-  function handleImage(e) {
-    const file = e.target.files?.[0] || null;
+  async function handleImage(e) {
+    const raw = e.target.files?.[0] || null;
     if (previewRef.current) URL.revokeObjectURL(previewRef.current);
-    const url = file ? URL.createObjectURL(file) : "";
+    const url = raw ? URL.createObjectURL(raw) : "";
     previewRef.current = url;
-    setImage(file);
     setPreview(url);
+    setMessage(null);
+
+    const file = raw ? await compressForUpload(raw) : null;
+    setImage(file);
+    if (raw && file !== raw) {
+      setMessage({
+        type: "ok",
+        text: "Large photo optimized for upload (clarity preserved)",
+      });
+    }
   }
 
   function set(key, value) {

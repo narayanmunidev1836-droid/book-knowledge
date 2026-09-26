@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.4",
-    "@vercel/blob": "^2.8.0",
     "antd": "^6.6.5",
     "bcryptjs": "^3.0.3",
     "mongoose": "^9.10.2",

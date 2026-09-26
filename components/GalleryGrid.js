@@ -17,8 +17,28 @@ import {
 
 export default function GalleryGrid({ entries, onDelete, onEdit }) {
   const [active, setActive] = useState(null);
+  const [fullImages, setFullImages] = useState({});
 
   const close = useCallback(() => setActive(null), []);
+
+  // List responses carry only the thumb — load the full image on first open.
+  useEffect(() => {
+    if (active === null) return;
+    const entry = entries[active];
+    if (!entry || !entry.hasFull || fullImages[entry._id]) return;
+    let cancelled = false;
+    fetch(`/api/entries/${entry._id}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d?.image) {
+          setFullImages((prev) => ({ ...prev, [entry._id]: d.image }));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [active, entries, fullImages]);
 
   useEffect(() => {
     if (active === null) return;
@@ -138,13 +158,22 @@ export default function GalleryGrid({ entries, onDelete, onEdit }) {
           <div className="fade-up relative mx-auto w-fit overflow-hidden rounded-2xl">
             {/* Image */}
             <div className="flex items-center justify-center">
-              <Image
-                src={entries[active].image}
-                alt={entries[active].bookName}
-                width={1600}
-                height={1200}
-                className="max-h-[76vh] h-auto w-auto max-w-full object-contain"
-              />
+              {entries[active].hasFull && !fullImages[entries[active]._id] ? (
+                <div className="flex h-[50vh] w-[70vw] max-w-4xl items-center justify-center rounded-xl bg-black/40">
+                  <span className="flex flex-col items-center gap-3 text-sm text-slate-300">
+                    <span className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
+                    Loading full image…
+                  </span>
+                </div>
+              ) : (
+                <Image
+                  src={fullImages[entries[active]._id] || entries[active].image}
+                  alt={entries[active].bookName}
+                  width={1600}
+                  height={1200}
+                  className="max-h-[76vh] h-auto w-auto max-w-full object-contain"
+                />
+              )}
             </div>
 
             {/* Counter */}

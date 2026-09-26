@@ -7,6 +7,7 @@ import {
   Loading3QuartersOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
+import { compressForUpload } from "@/lib/clientCompress";
 
 const LANGUAGES = ["Gujarati", "Hindi", "English", "Sanskrit"];
 
@@ -129,7 +130,10 @@ export default function AddBookModal({ onClose, onCreated }) {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setCover(e.target.files?.[0] || null)}
+              onChange={async (e) => {
+                const raw = e.target.files?.[0] || null;
+                setCover(raw ? await compressForUpload(raw) : null);
+              }}
               className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
             />
           </div>

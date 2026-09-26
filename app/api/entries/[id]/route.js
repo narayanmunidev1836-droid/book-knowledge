@@ -15,6 +15,18 @@ async function loadOwnEntry(id, userId) {
   }
 }
 
+export async function GET(req, { params }) {
+  const { user, error } = await requireRole("sant", "admin");
+  if (error) return error;
+
+  const { id } = await params;
+  const entry = await loadOwnEntry(id, user.id);
+  if (!entry) return Response.json({ error: "Entry not found" }, { status: 404 });
+
+  // Full base64 image — only fetched when the lightbox opens.
+  return Response.json(toPlain(entry));
+}
+
 export async function PUT(req, { params }) {
   const { user, error } = await requireRole("sant", "admin");
   if (error) return error;

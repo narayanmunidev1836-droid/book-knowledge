@@ -31,7 +31,7 @@ images they created themselves.
 - Responsive layout — persistent sidebar on desktop, hamburger + drawer on tablet/mobile
 - Loading spinners on every data page
 - JWT session auth via NextAuth (credentials), role-based routing (`/admin`, `/sant`)
-- Images auto-converted to WebP, MongoDB storage, served from `/uploads`
+- Images compressed to WebP and stored as base64 in MongoDB (thumbnails for grids, full image in lightbox)
 - Custom multi-size favicon (ICO + SVG + Apple icon)
 
 ## Tech Stack
@@ -65,10 +65,6 @@ AUTH_URL=http://localhost:3000
 ADMIN_EMAIL=admin@book.com
 ADMIN_PASSWORD=your-admin-password
 ADMIN_NAME=Admin
-
-# Image storage — Vercel Blob (only needed when deploying to Vercel;
-# locally images are saved to ./uploads when this is absent)
-BLOB_READ_WRITE_TOKEN=...
 ```
 
 ### 3. Run the dev server
@@ -133,18 +129,20 @@ images).
 
 ## Deployment (Vercel)
 
-Vercel's serverless filesystem is read-only, so images are stored in
-**Vercel Blob** instead of `./uploads`:
+Images are stored **inside MongoDB as base64 WebP** — no file storage service
+(or extra env var) is needed:
 
-1. Vercel dashboard → your project → **Storage** → create **Blob** store →
-   connect it to the project (this auto-adds `BLOB_READ_WRITE_TOKEN`).
-2. Add the other env vars (`MONGODB_URI`, `AUTH_SECRET`, `ADMIN_*`) under
-   **Settings → Environment Variables**.
-3. Redeploy.
+- Sharp compresses at high quality first (clarity first), stepping quality down
+  only if the image would exceed ~6MB (entries) / ~1.5MB (covers)
+- Entries store the full image plus a small thumbnail; gallery lists ship only
+  thumbnails and the lightbox fetches the full image on demand
+- Large camera photos are re-encoded in the browser first (Vercel caps request
+  bodies at ~4.5MB)
+- Legacy file-based `/uploads/...` records keep working via
+  `app/uploads/[...filepath]`
 
-`lib/upload.js` automatically switches: with `BLOB_READ_WRITE_TOKEN` set it
-uses Blob, otherwise it writes to `./uploads` (local dev). Deletion works for
-both. Legacy `/uploads/...` paths keep being served by `app/uploads/[...filepath]`.
+Just set `MONGODB_URI`, `AUTH_SECRET`, `ADMIN_*` under
+**Settings → Environment Variables** and deploy.
 
 ## License
 

@@ -1,7 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import { Entry, Book, Topic } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
-import { saveUpload } from "@/lib/upload";
+import { processEntryImage } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
@@ -33,8 +33,34 @@ export async function GET(req) {
   }
   if (clauses.length) filter.$and = clauses;
 
-  const entries = await Entry.find(filter).sort({ createdAt: -1 }).limit(500).lean();
-  return Response.json(toPlain(entries));
+  // Lists ship the small thumb only — the full base64 image is fetched
+  // per-image from GET /api/entries/[id] when the lightbox opens.
+  const entries = await Entry.aggregate([
+    { $match: filter },
+    { $sort: { createdAt: -1 } },
+    { $limit: 500 },
+    {
+      $project: {
+        book: 1,
+        bookName: 1,
+        topic: 1,
+        topicName: 1,
+        topics: 1,
+        topicNames: 1,
+        page: 1,
+        note: 1,
+        uploadedBy: 1,
+        uploadedByName: 1,
+        createdAt: 1,
+        thumb: 1,
+        hasFull: { $cond: [{ $ifNull: ["$thumb", false] }, true, false] },
+        image: {
+          $cond: [{ $ifNull: ["$thumb", false] }, "$thumb", "$image"],
+        },
+      },
+    },
+  ]);
+  return Response.json(JSON.parse(JSON.stringify(entries)));
 }
 
 export async function POST(req) {
@@ -75,9 +101,9 @@ export async function POST(req) {
   }
   const ordered = topicIds.map((id) => topics.find((t) => String(t._id) === id));
 
-  let image;
+  let processed;
   try {
-    image = await saveUpload(imageFile, "entries");
+    processed = await processEntryImage(imageFile);
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 });
   }
@@ -90,7 +116,8 @@ export async function POST(req) {
     topics: ordered.map((t) => t._id),
     topicNames: ordered.map((t) => t.name),
     page: pageRaw ? Number(pageRaw) : undefined,
-    image,
+    image: processed.image,
+    thumb: processed.thumb,
     note,
     uploadedBy: user.id,
     uploadedByName: user.name,
