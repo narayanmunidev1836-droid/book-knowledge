@@ -14,6 +14,13 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Book Knowledge — Notes & Images for Sants",
   description: "Platform for books, topics and image entries",
+  icons: {
+    icon: [
+      { url: "/icon.svg?v=2", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=2", sizes: "any" },
+    ],
+    apple: "/apple-icon.png?v=2",
+  },
 };
 
 export default function RootLayout({ children }) {
