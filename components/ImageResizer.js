@@ -55,8 +55,8 @@ function drawTriangle(ctx, img, s, d) {
   const b = (Y0 * (y2 - y1) + Y1 * (y0 - y2) + Y2 * (y1 - y0)) / den;
   const c = (X0 * (x1 - x2) + X1 * (x2 - x0) + X2 * (x0 - x1)) / den;
   const dd = (Y0 * (x1 - x2) + Y1 * (x2 - x0) + Y2 * (x0 - x1)) / den;
-  const e = (X0 * (y2 * x1 - y1 * x2) + X1 * (y0 * x2 - y2 * x0) + X2 * (y1 * x0 - y0 * x1)) / den;
-  const f = (Y0 * (y2 * x1 - y1 * x2) + Y1 * (y0 * x2 - y2 * x0) + Y2 * (y1 * x0 - y0 * x1)) / den;
+  const e = -(X0 * (y2 * x1 - y1 * x2) + X1 * (y0 * x2 - y2 * x0) + X2 * (y1 * x0 - y0 * x1)) / den;
+  const f = -(Y0 * (y2 * x1 - y1 * x2) + Y1 * (y0 * x2 - y2 * x0) + Y2 * (y1 * x0 - y0 * x1)) / den;
 
   ctx.setTransform(a, b, c, dd, e, f);
   ctx.drawImage(img, 0, 0);

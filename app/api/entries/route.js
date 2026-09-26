@@ -25,6 +25,11 @@ export async function GET(req) {
   const topicId = searchParams.get("topicId");
   const bookId = searchParams.get("bookId");
   const q = searchParams.get("q");
+  // Opt-in pagination: only when the caller sends page/limit, so existing
+  // consumers that expect a bare array keep working unchanged.
+  const paginated = searchParams.has("page") || searchParams.has("limit");
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const limit = Math.min(100, Number(searchParams.get("limit")) || 30);
 
   // Entries are strictly per user — admins don't get to browse them either.
   const userId = toOid(user.id);
@@ -55,10 +60,12 @@ export async function GET(req) {
 
   // Lists ship the small thumb only — the full base64 image is fetched
   // per-image from GET /api/entries/[id] when the lightbox opens.
-  const entries = await Entry.aggregate([
+  const pipeline = [
     { $match: filter },
     { $sort: { createdAt: -1 } },
-    { $limit: 500 },
+    ...(paginated
+      ? [{ $skip: (page - 1) * limit }, { $limit: limit }]
+      : [{ $limit: 500 }]),
     {
       $project: {
         book: 1,
@@ -94,8 +101,22 @@ export async function GET(req) {
         },
       },
     },
+  ];
+
+  const [entries, total] = await Promise.all([
+    Entry.aggregate(pipeline),
+    paginated ? Entry.countDocuments(filter) : null,
   ]);
-  return Response.json(JSON.parse(JSON.stringify(entries)));
+  const items = JSON.parse(JSON.stringify(entries));
+  if (paginated) {
+    return Response.json({
+      items,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    });
+  }
+  return Response.json(items);
 }
 
 export async function POST(req) {
