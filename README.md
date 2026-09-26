@@ -8,10 +8,9 @@ images they created themselves.
 ## Features
 
 ### Admin
-- Dashboard with aggregate stats (sants, books, topics, images)
+- Dashboard with aggregate stats (sants, books, topics, images), 30-day upload chart, top books/topics and most active sants
 - Manage sants (add, edit, enable/disable, reset password, delete)
 - **Sant-wise activity report** — per-sant books/topics/images counts, last upload, status
-- **Analytics** — 30-day upload bar chart, top books, top topics, most active sants
 - **Activity log** — audit trail of logins, uploads, edits, deletes, password changes (filterable + searchable)
 - **Site settings** — site name & tagline, applied to sidebar brand and page title
 - Change own password
@@ -89,13 +88,13 @@ Open [http://localhost:3000](http://localhost:3000) — you will be redirected t
 
 ```
 app/
-  admin/          # Admin pages (dashboard, sants, report, analytics, activity, settings)
+  admin/          # Admin pages (dashboard, sants, report, activity, settings)
   sant/           # Sant pages (dashboard, entry, books, topics, search, gallery)
   api/            # REST API routes
     books/        # GET, POST, PUT, DELETE (own only)
     topics/       # GET, POST, PUT, DELETE (own only)
     entries/      # GET (search own), POST (upload), PUT, DELETE (own only)
-    admin/        # stats, users, report, analytics, activity, settings
+    admin/        # users, report, analytics (dashboard), activity, settings
     account/      # change own password
     auth/         # NextAuth handler
   login/          # Login page (hero + credentials form)
@@ -116,9 +115,8 @@ proxy.js          # Route protection middleware
 | PUT/DELETE | `/api/topics/[id]` | Update / delete own topic |
 | GET/POST | `/api/entries` | Search own entries (`q`, `topicId`) / upload image |
 | PUT/DELETE | `/api/entries/[id]` | Edit note / delete own entry |
-| GET | `/api/admin/stats` | Dashboard statistics (admin) |
+| GET | `/api/admin/analytics` | Dashboard stats, upload trends, top books/topics (admin) |
 | GET | `/api/admin/report` | Sant-wise activity report (admin) |
-| GET | `/api/admin/analytics` | Upload trends, top books/topics (admin) |
 | GET | `/api/admin/activity` | Activity/audit log with filters (admin) |
 | GET/PUT | `/api/admin/settings` | Site name & tagline (GET all, PUT admin) |
 | GET/POST | `/api/admin/users` | List / create sants (admin) |

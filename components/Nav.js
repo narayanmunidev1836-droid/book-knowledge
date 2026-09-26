@@ -19,7 +19,6 @@ import {
   SearchOutlined,
   LockOutlined,
   BarChartOutlined,
-  LineChartOutlined,
   HistoryOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
@@ -29,7 +28,6 @@ const ICONS = {
   "/admin": AppstoreOutlined,
   "/admin/sants": TeamOutlined,
   "/admin/report": BarChartOutlined,
-  "/admin/analytics": LineChartOutlined,
   "/admin/activity": HistoryOutlined,
   "/admin/settings": SettingOutlined,
   "/sant": AppstoreOutlined,
