@@ -10,6 +10,9 @@ import {
   LeftOutlined,
   RightOutlined,
   PictureOutlined,
+  BookOutlined,
+  UserOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 
 export default function GalleryGrid({ entries, onDelete, onEdit }) {
@@ -120,66 +123,116 @@ export default function GalleryGrid({ entries, onDelete, onEdit }) {
           closable={false}
           keyboard={false}
           centered
-          width={1100}
+          width="min(1150px, 96vw)"
           styles={{
-            content: {
+            container: {
               background: "transparent",
               boxShadow: "none",
               padding: 0,
               maxWidth: "96vw",
             },
             body: { padding: 0 },
-            mask: { background: "rgba(0, 0, 0, 0.9)" },
+            mask: { background: "rgba(2, 6, 23, 0.94)" },
           }}
         >
-          <button
-            type="button"
-            onClick={close}
-            className="absolute top-4 right-4 z-10 flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-white transition hover:bg-white/20"
-          >
-            <CloseOutlined /> Close
-          </button>
+          <div className="fade-up relative mx-auto w-fit overflow-hidden rounded-2xl">
+            {/* Image */}
+            <div className="flex items-center justify-center">
+              <Image
+                src={entries[active].image}
+                alt={entries[active].bookName}
+                width={1600}
+                height={1200}
+                className="max-h-[76vh] h-auto w-auto max-w-full object-contain"
+              />
+            </div>
 
-          <div className="flex flex-col items-center">
-            <Image
-              src={entries[active].image}
-              alt={entries[active].bookName}
-              width={1600}
-              height={1200}
-              className="mx-auto max-h-[75vh] w-auto rounded-lg object-contain"
-            />
+            {/* Counter */}
+            <span className="absolute top-4 left-4 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold tracking-wide text-white/90 backdrop-blur ring-1 ring-white/15">
+              {active + 1} / {entries.length}
+            </span>
 
-            <div className="mt-4 max-w-xl text-center text-white">
-              <p className="font-medium">{entries[active].bookName}</p>
-            <p className="text-sm text-slate-300">
-              {entries[active].page ? `Page ${entries[active].page}` : ""} ·{" "}
-              {entries[active].topicNames?.length
-                ? entries[active].topicNames.join(", ")
-                : entries[active].topicName}{" "}
-              · {entries[active].uploadedByName}
-            </p>
-              {entries[active].note && (
-                <p className="mt-2 text-sm text-slate-200 italic">
-                  “{entries[active].note}”
-                </p>
-              )}
-              <div className="mt-3 flex justify-center gap-3">
+            {/* Close */}
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Close"
+              className="absolute top-3.5 right-3.5 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-base text-white backdrop-blur ring-1 ring-white/15 transition duration-200 hover:rotate-90 hover:bg-red-500/80 hover:ring-red-400/50"
+            >
+              <CloseOutlined />
+            </button>
+
+            {/* Arrows */}
+            {entries.length > 1 && (
+              <>
                 <button
                   type="button"
+                  aria-label="Previous image"
                   onClick={() =>
                     setActive((i) => (i - 1 + entries.length) % entries.length)
                   }
-                  className="flex items-center gap-2 rounded-lg bg-white/10 px-4 py-1.5 text-white transition hover:bg-white/20"
+                  className="absolute top-1/2 left-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-lg text-white backdrop-blur ring-1 ring-white/20 transition duration-200 hover:scale-110 hover:bg-emerald-500 hover:ring-emerald-300 sm:left-5"
                 >
-                  <LeftOutlined /> Previous
+                  <LeftOutlined />
                 </button>
                 <button
                   type="button"
+                  aria-label="Next image"
                   onClick={() => setActive((i) => (i + 1) % entries.length)}
-                  className="flex items-center gap-2 rounded-lg bg-white/10 px-4 py-1.5 text-white transition hover:bg-white/20"
+                  className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-lg text-white backdrop-blur ring-1 ring-white/20 transition duration-200 hover:scale-110 hover:bg-emerald-500 hover:ring-emerald-300 sm:right-5"
                 >
-                  Next <RightOutlined />
+                  <RightOutlined />
                 </button>
+              </>
+            )}
+
+            {/* Bottom gradient info */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-5 pt-24 pb-5 sm:px-7 sm:pb-6">
+              <div className="pointer-events-auto">
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {(entries[active].topicNames?.length
+                    ? entries[active].topicNames
+                    : [entries[active].topicName]
+                  ).map((name) => (
+                    <span
+                      key={name}
+                      className="rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-400/40 backdrop-blur"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                  {entries[active].page != null && entries[active].page !== "" && (
+                    <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/90 ring-1 ring-white/20 backdrop-blur">
+                      Page {entries[active].page}
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="flex items-center gap-2 truncate text-lg font-bold text-white sm:text-xl">
+                  <BookOutlined className="shrink-0 text-emerald-400" />
+                  {entries[active].bookName}
+                </h3>
+
+                <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300">
+                  <span className="flex items-center gap-1.5">
+                    <UserOutlined className="text-slate-400" />
+                    {entries[active].uploadedByName}
+                  </span>
+                  {entries[active].createdAt && (
+                    <span className="flex items-center gap-1.5">
+                      <CalendarOutlined className="text-slate-400" />
+                      {new Date(entries[active].createdAt).toLocaleDateString(
+                        "en-IN"
+                      )}
+                    </span>
+                  )}
+                </p>
+
+                {entries[active].note && (
+                  <p className="mt-2 line-clamp-2 max-w-2xl border-l-2 border-emerald-400/70 pl-3 text-sm italic leading-relaxed text-slate-200">
+                    “{entries[active].note}”
+                  </p>
+                )}
               </div>
             </div>
           </div>

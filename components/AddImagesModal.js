@@ -12,7 +12,7 @@ import {
 export default function AddImagesModal({ onClose, topics, onTopicAdded, onUploaded }) {
   const fileRef = useRef(null);
   const [books, setBooks] = useState([]);
-  const [form, setForm] = useState({ bookId: "", topicId: "__add__", page: "", note: "" });
+  const [form, setForm] = useState({ bookId: "", topicIds: [], page: "", note: "" });
   const [image, setImage] = useState(null);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState(null);
@@ -43,14 +43,15 @@ export default function AddImagesModal({ onClose, topics, onTopicAdded, onUpload
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function handleTopicChange(value) {
-    if (value === "__add__") {
+  function handleTopicChange(values) {
+    if (values.includes("__add__")) {
       setTopicName("");
       setTopicMessage(null);
       setTopicOpen(true);
+      setField("topicIds", values.filter((v) => v !== "__add__"));
       return;
     }
-    setField("topicId", value);
+    setField("topicIds", values);
   }
 
   async function handleAddTopic(e) {
@@ -71,7 +72,7 @@ export default function AddImagesModal({ onClose, topics, onTopicAdded, onUpload
         return;
       }
       onTopicAdded(json);
-      setForm((f) => ({ ...f, topicId: json._id }));
+      setForm((f) => ({ ...f, topicIds: [...f.topicIds, json._id] }));
       setTopicName("");
       setTopicOpen(false);
     } catch {
@@ -85,14 +86,14 @@ export default function AddImagesModal({ onClose, topics, onTopicAdded, onUpload
     e.preventDefault();
     setMessage(null);
     if (!form.bookId) return setMessage({ type: "error", text: "Select a book" });
-    if (!form.topicId || form.topicId === "__add__")
-      return setMessage({ type: "error", text: "Select a topic" });
+    if (!form.topicIds.length)
+      return setMessage({ type: "error", text: "Select at least one topic" });
     if (!image) return setMessage({ type: "error", text: "Choose an image" });
 
     setPending(true);
     const data = new FormData();
     data.append("bookId", form.bookId);
-    data.append("topicId", form.topicId);
+    form.topicIds.forEach((id) => data.append("topicId", id));
     data.append("page", form.page);
     data.append("note", form.note);
     data.append("image", image);
@@ -105,7 +106,7 @@ export default function AddImagesModal({ onClose, topics, onTopicAdded, onUpload
         return;
       }
       setMessage({ type: "ok", text: "Image uploaded ✓" });
-      setForm({ bookId: "", topicId: "__add__", page: "", note: "" });
+      setForm({ bookId: "", topicIds: [], page: "", note: "" });
       setImage(null);
       if (fileRef.current) fileRef.current.value = "";
       onUploaded?.();
@@ -157,11 +158,12 @@ export default function AddImagesModal({ onClose, topics, onTopicAdded, onUpload
           </div>
 
           <div>
-            <label className="label">Topic *</label>
+            <label className="label">Topics *</label>
             <Select
-              value={form.topicId === "__add__" ? undefined : form.topicId || undefined}
+              mode="multiple"
+              value={form.topicIds}
               onChange={handleTopicChange}
-              placeholder="— Select topic —"
+              placeholder="— Select one or more topics —"
               className="select-input w-full"
               options={[
                 { value: "__add__", label: "+ Add Topic" },
