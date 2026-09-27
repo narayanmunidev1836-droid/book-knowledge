@@ -105,6 +105,7 @@ export default function TopicEntries({ topicId }) {
     const count = json.imageCount || 0;
     const upd = {
       note: json.note,
+      title: json.title,
       image: json.thumb || "",
       thumb: json.thumb || "",
       images: json.images || [],
@@ -126,7 +127,7 @@ export default function TopicEntries({ topicId }) {
   const term = q.trim().toLowerCase();
   const visible = term
     ? entries.filter((e) =>
-        [e.bookName, e.note, e.page, ...(e.topicNames || [])]
+        [e.bookName, e.note, e.page, e.indexNo, ...(e.topicNames || [])]
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(term))
       )
@@ -265,7 +266,10 @@ export default function TopicEntries({ topicId }) {
                       ))}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5">{entry.page || "—"}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap">
+                    {entry.page || "—"}
+                    {entry.indexNo ? ` · idx ${entry.indexNo}` : ""}
+                  </td>
                   <td className="px-4 py-2.5 text-slate-600 italic">
                     <div className="max-w-[16rem] truncate">
                       {entry.note || "-"}
@@ -410,9 +414,10 @@ export default function TopicEntries({ topicId }) {
               <p className="flex items-center gap-2">
                 <FileTextOutlined className="text-emerald-600" />
                 <span>
-                  <span className="block text-xs text-slate-400">Page</span>
+                  <span className="block text-xs text-slate-400">Page / Index</span>
                   <span className="font-semibold text-slate-800">
                     {selected.page || "—"}
+                    {selected.indexNo ? ` · ${selected.indexNo}` : ""}
                   </span>
                 </span>
               </p>

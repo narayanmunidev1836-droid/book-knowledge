@@ -23,7 +23,9 @@ export default function EntryForm({ onAddBook, newBook }) {
     bookId: "",
     topicIds: [],
     page: "",
+    indexNo: "",
     note: "",
+    title: "",
   });
   const [topicQuery, setTopicQuery] = useState(""); // text typed in the topic search
   const [images, setImages] = useState([]); // File[]
@@ -202,7 +204,9 @@ export default function EntryForm({ onAddBook, newBook }) {
     data.append("bookId", form.bookId);
     form.topicIds.forEach((id) => data.append("topicId", id));
     data.append("page", form.page);
+    data.append("indexNo", form.indexNo);
     data.append("note", form.note);
+    data.append("title", form.title);
     images.forEach((file) => data.append("image", file));
 
     const res = await fetch("/api/entries", { method: "POST", body: data });
@@ -215,7 +219,7 @@ export default function EntryForm({ onAddBook, newBook }) {
     }
 
     setMessage({ type: "ok", text: "Entry saved ✓" });
-    setForm({ bookId: "", topicIds: [], page: "", note: "" });
+    setForm({ bookId: "", topicIds: [], page: "", indexNo: "", note: "", title: "" });
     previews.forEach((url) => URL.revokeObjectURL(url));
     setImages([]);
     setPreviews([]);
@@ -271,6 +275,16 @@ export default function EntryForm({ onAddBook, newBook }) {
         </div>
 
         <div>
+          <label className="label">Title (optional)</label>
+          <input
+            value={form.title}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="e.g. Guru Bhakti nu mahatmya"
+            className="input"
+          />
+        </div>
+
+        <div>
           <label className="label">Topics *</label>
           <Select
             mode="multiple"
@@ -298,15 +312,28 @@ export default function EntryForm({ onAddBook, newBook }) {
           />
         </div>
 
-        <div>
-          <label className="label">Page Number</label>
-          <input
-            type="number"
-            value={form.page}
-            onChange={(e) => set("page", e.target.value)}
-            placeholder="e.g. 125"
-            className="input"
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Page No</label>
+            <input
+              type="number"
+              value={form.page}
+              onChange={(e) => set("page", e.target.value)}
+              placeholder="e.g. 125"
+              className="input"
+            />
+          </div>
+
+          <div>
+            <label className="label">Index No</label>
+            <input
+              type="number"
+              value={form.indexNo}
+              onChange={(e) => set("indexNo", e.target.value)}
+              placeholder="e.g. 12"
+              className="input"
+            />
+          </div>
         </div>
 
         <div>

@@ -100,6 +100,7 @@ export default function SantDashboard() {
           ? {
               ...e,
               note: json.note,
+              title: json.title,
               image: json.thumb || json.image || "",
               thumb: json.thumb || "",
               images: json.images || [],

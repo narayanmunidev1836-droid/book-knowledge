@@ -43,10 +43,14 @@ export async function PUT(req, { params }) {
 
   // JSON (note/page only) or multipart (note + removeIndices + new images).
   const contentType = req.headers.get("content-type") || "";
-  let note, pageRaw, removeImages, newFiles;
+  let note, title, pageRaw, indexRaw, removeImages, newFiles;
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
     note = form.has("note") ? String(form.get("note") || "").trim() : undefined;
+    title = form.has("title") ? String(form.get("title") || "").trim() : undefined;
+    indexRaw = form.has("indexNo")
+      ? String(form.get("indexNo") || "").trim()
+      : undefined;
     pageRaw = form.has("page") ? String(form.get("page") || "").trim() : undefined;
     removeImages = form
       .getAll("removeIndices")
@@ -58,6 +62,8 @@ export async function PUT(req, { params }) {
   } else {
     const body = await req.json().catch(() => ({}));
     note = typeof body.note === "string" ? body.note.trim() : undefined;
+    title = typeof body.title === "string" ? body.title.trim() : undefined;
+    indexRaw = body.indexNo !== undefined ? String(body.indexNo).trim() : undefined;
     pageRaw = body.page !== undefined ? String(body.page).trim() : undefined;
     removeImages = Array.isArray(body.removeImages)
       ? body.removeImages.map(Number)
@@ -67,6 +73,13 @@ export async function PUT(req, { params }) {
   removeImages = [...new Set(removeImages)];
 
   if (note !== undefined) entry.note = note;
+  if (title !== undefined) entry.title = title;
+  if (indexRaw !== undefined) {
+    if (indexRaw && Number.isNaN(Number(indexRaw))) {
+      return Response.json({ error: "Invalid index number" }, { status: 400 });
+    }
+    entry.indexNo = indexRaw ? Number(indexRaw) : undefined;
+  }
   if (pageRaw !== undefined) {
     if (pageRaw && Number.isNaN(Number(pageRaw))) {
       return Response.json({ error: "Invalid page number" }, { status: 400 });
@@ -168,7 +181,9 @@ export async function PUT(req, { params }) {
   return Response.json({
     _id: plain._id,
     note: plain.note,
+    title: plain.title,
     page: plain.page,
+    indexNo: plain.indexNo,
     image: urls.image,
     thumb: urls.image,
     images: urls.images,

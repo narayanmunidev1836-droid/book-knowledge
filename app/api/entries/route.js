@@ -49,6 +49,7 @@ export async function GET(req) {
     const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     clauses.push({
       $or: [
+        { title: rx },
         { bookName: rx },
         { topicName: rx },
         { topicNames: rx },
@@ -71,11 +72,13 @@ export async function GET(req) {
       $project: {
         book: 1,
         bookName: 1,
+        title: 1,
         topic: 1,
         topicName: 1,
         topics: 1,
         topicNames: 1,
         page: 1,
+        indexNo: 1,
         note: 1,
         uploadedBy: 1,
         uploadedByName: 1,
@@ -132,6 +135,8 @@ export async function POST(req) {
   const topicIds = [...new Set(form.getAll("topicId").map(String).filter(Boolean))];
   const pageRaw = String(form.get("page") || "").trim();
   const note = String(form.get("note") || "").trim();
+  const title = String(form.get("title") || "").trim();
+  const indexRaw = String(form.get("indexNo") || "").trim();
 
   if (!bookId || !topicIds.length) {
     return Response.json({ error: "Book and at least one topic are required" }, { status: 400 });
@@ -144,6 +149,9 @@ export async function POST(req) {
   }
   if (pageRaw && Number.isNaN(Number(pageRaw))) {
     return Response.json({ error: "Invalid page number" }, { status: 400 });
+  }
+  if (indexRaw && Number.isNaN(Number(indexRaw))) {
+    return Response.json({ error: "Invalid index number" }, { status: 400 });
   }
 
   const book = await Book.findOne({ _id: bookId, createdBy: user.id })
@@ -182,11 +190,13 @@ export async function POST(req) {
   const entry = await Entry.create({
     book: book._id,
     bookName: book.name,
+    title: title || undefined,
     topic: ordered[0]._id,
     topicName: ordered[0].name,
     topics: ordered.map((t) => t._id),
     topicNames: ordered.map((t) => t.name),
     page: pageRaw ? Number(pageRaw) : undefined,
+    indexNo: indexRaw ? Number(indexRaw) : undefined,
     image: processed[0]?.image || "",
     thumb: processed[0]?.thumb || undefined,
     images: processed.map((p) => p.image),

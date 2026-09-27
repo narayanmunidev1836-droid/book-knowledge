@@ -142,7 +142,8 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
                   {entry.bookName}
                 </p>
                 <p className={`${compact ? "mt-0.5 text-xs" : "text-sm"} text-slate-500`}>
-                  {entry.page ? `Page ${entry.page}` : "No page"} ·{" "}
+                  {entry.page ? `Page ${entry.page}` : "No page"}
+                  {entry.indexNo ? ` · Idx ${entry.indexNo}` : ""} ·{" "}
                   <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
                     {entry.topicNames?.length
                       ? entry.topicNames.join(", ")
@@ -291,6 +292,11 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
                   {activeEntry.page != null && activeEntry.page !== "" && (
                     <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/90 ring-1 ring-white/20 backdrop-blur">
                       Page {activeEntry.page}
+                    </span>
+                  )}
+                  {activeEntry.indexNo != null && activeEntry.indexNo !== "" && (
+                    <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/90 ring-1 ring-white/20 backdrop-blur">
+                      Idx {activeEntry.indexNo}
                     </span>
                   )}
                 </div>

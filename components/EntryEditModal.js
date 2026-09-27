@@ -15,6 +15,7 @@ const MAX_IMAGES = 10;
 
 export default function EntryEditModal({ open, entry, onClose, onSubmit }) {
   const [note, setNote] = useState("");
+  const [title, setTitle] = useState("");
   const [thumbs, setThumbs] = useState([]); // [{ src, i }] original order
   const [removed, setRemoved] = useState(() => new Set()); // original indices
   const [newFiles, setNewFiles] = useState([]); // [{ file, url }] picked, not saved yet
@@ -33,6 +34,7 @@ export default function EntryEditModal({ open, entry, onClose, onSubmit }) {
   if (prevKey !== key) {
     setPrevKey(key);
     setNote(entry?.note || "");
+    setTitle(entry?.title || "");
     setRemoved(new Set());
     setNewFiles([]);
     setCropQueue([]);
@@ -127,6 +129,7 @@ export default function EntryEditModal({ open, entry, onClose, onSubmit }) {
     try {
       const fd = new FormData();
       fd.append("note", note);
+      fd.append("title", title);
       [...removed].forEach((i) => fd.append("removeIndices", String(i)));
       newFiles.forEach((n) => fd.append("image", n.file));
       await onSubmit(fd);
@@ -167,6 +170,16 @@ export default function EntryEditModal({ open, entry, onClose, onSubmit }) {
       destroyOnHidden
     >
       <div className="space-y-4 pt-3">
+        <div>
+          <label className="label">Title</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Guru Bhakti nu mahatmya"
+            className="input"
+          />
+        </div>
+
         <div>
           <label className="label">Note</label>
           <AutoTextarea

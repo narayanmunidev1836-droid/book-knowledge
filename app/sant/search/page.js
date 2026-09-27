@@ -9,6 +9,7 @@ import {
   BookOutlined,
   TagsOutlined,
   FileTextOutlined,
+  HighlightOutlined,
   UserOutlined,
   CalendarOutlined,
   PictureOutlined,
@@ -177,6 +178,7 @@ export default function SearchPage() {
     const count = json.imageCount || 0;
     const upd = {
       note: json.note,
+      title: json.title,
       image: json.thumb || "",
       thumb: json.thumb || "",
       images: json.images || [],
@@ -315,14 +317,21 @@ export default function SearchPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold text-slate-800">
+                      {entry.title && (
+                        <p className="truncate font-semibold text-slate-800">
+                          {entry.title}
+                        </p>
+                      )}
+                      <p
+                        className={`truncate ${
+                          entry.title
+                            ? "text-sm font-medium text-slate-500"
+                            : "font-semibold text-slate-800"
+                        }`}
+                      >
                         {entry.bookName}
-                      </p>
-                      <p className="text-sm text-slate-500">
-                        {entry.page ? `Page ${entry.page}` : "No page"} ·{" "}
-                        {entry.createdAt
-                          ? new Date(entry.createdAt).toLocaleDateString("en-IN")
-                          : "—"}
+                        {entry.page ? ` - ${entry.page}` : ""}
+                        {entry.indexNo ? ` · idx ${entry.indexNo}` : ""}
                       </p>
                       <span className="mt-1 flex flex-wrap gap-1">
                         {topicNamesOf(entry).map((name) => (
@@ -416,8 +425,19 @@ export default function SearchPage() {
                           )}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 font-semibold text-slate-800">
-                        {entry.bookName}
+                      <td className="px-4 py-2.5 text-slate-800">
+                        <div className="max-w-[14rem]">
+                          {entry.title && (
+                            <p className="truncate font-semibold">{entry.title}</p>
+                          )}
+                          <p
+                            className={`truncate ${
+                              entry.title ? "text-sm text-slate-500" : "font-semibold"
+                            }`}
+                          >
+                            {entry.bookName}
+                          </p>
+                        </div>
                       </td>
                       <td className="px-4 py-2.5">
                         <span className="flex flex-wrap gap-1">
@@ -431,7 +451,10 @@ export default function SearchPage() {
                           ))}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5">{entry.page || "—"}</td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        {entry.page || "—"}
+                        {entry.indexNo ? ` · idx ${entry.indexNo}` : ""}
+                      </td>
                       <td className="px-4 py-2.5 text-slate-600 italic">
                         <div className="max-w-[18rem] truncate">
                           {entry.note || "—"}
@@ -561,6 +584,17 @@ export default function SearchPage() {
             </div>
 
             <div className="space-y-3 text-sm">
+              {selected.title && (
+                <p className="flex items-start gap-2">
+                  <HighlightOutlined className="mt-0.5 text-emerald-600" />
+                  <span>
+                    <span className="block text-xs text-slate-400">Title</span>
+                    <span className="font-semibold text-slate-800">
+                      {selected.title}
+                    </span>
+                  </span>
+                </p>
+              )}
               <p className="flex items-start gap-2">
                 <BookOutlined className="mt-0.5 text-emerald-600" />
                 <span>
@@ -595,9 +629,10 @@ export default function SearchPage() {
               <p className="flex items-center gap-2">
                 <FileTextOutlined className="text-emerald-600" />
                 <span>
-                  <span className="block text-xs text-slate-400">Page</span>
+                  <span className="block text-xs text-slate-400">Page / Index</span>
                   <span className="font-semibold text-slate-800">
                     {selected.page || "—"}
+                    {selected.indexNo ? ` · ${selected.indexNo}` : ""}
                   </span>
                 </span>
               </p>
