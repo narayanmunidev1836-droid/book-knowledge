@@ -14,6 +14,11 @@ import {
 import ConfirmModal from "@/components/ConfirmModal";
 import Spinner from "@/components/Spinner";
 
+// Same order the API returns with ?sort=count: busiest topic first.
+const byCountThenName = (a, b) =>
+  (b.entryCount || 0) - (a.entryCount || 0) ||
+  String(a.name).localeCompare(String(b.name));
+
 export default function SantTopicsPage() {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +39,7 @@ export default function SantTopicsPage() {
     : topics;
 
   useEffect(() => {
-    fetch("/api/topics")
+    fetch("/api/topics?sort=count")
       .then((r) => r.json())
       .then((data) => setTopics(Array.isArray(data) ? data : []))
       .catch(() => setMessage({ type: "error", text: "Failed to load data" }))
@@ -54,7 +59,7 @@ export default function SantTopicsPage() {
       setMessage({ type: "error", text: json.error || "Failed to add" });
       return;
     }
-    setTopics((list) => [...list, json].sort((a, b) => a.name.localeCompare(b.name)));
+    setTopics((list) => [...list, json].sort(byCountThenName));
     setName("");
     setMessage({ type: "ok", text: "Topic added ✓" });
   }
@@ -73,9 +78,7 @@ export default function SantTopicsPage() {
       return;
     }
     setTopics((list) =>
-      list
-        .map((t) => (t._id === json._id ? { ...t, name: json.name } : t))
-        .sort((a, b) => a.name.localeCompare(b.name))
+      list.map((t) => (t._id === json._id ? { ...t, name: json.name } : t)).sort(byCountThenName)
     );
     setEditing(null);
     setMessage({ type: "ok", text: "Topic updated ✓" });

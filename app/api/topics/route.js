@@ -27,7 +27,7 @@ async function topicRecordCounts(userId) {
   ]);
 }
 
-export async function GET() {
+export async function GET(req) {
   const { user, error } = await requireRole("sant", "admin");
   if (error) return error;
 
@@ -44,6 +44,15 @@ export async function GET() {
     ...t,
     entryCount: countMap.get(String(t._id)) || 0,
   }));
+
+  // ?sort=count → busiest topic first (count itself comes from the DB).
+  const sortByCount = new URL(req.url).searchParams.get("sort") === "count";
+  if (sortByCount) {
+    plain.sort(
+      (a, b) =>
+        b.entryCount - a.entryCount || String(a.name).localeCompare(String(b.name))
+    );
+  }
   return Response.json(plain);
 }
 

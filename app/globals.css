@@ -142,6 +142,12 @@ body {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
+/* note / long text: break even when there are no spaces (e.g. continuous typing) */
+textarea.input {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 /* antd Select — match .input look (40px height, emerald focus) */
 .select-input {
   --ant-select-border-radius: 0.75rem !important;

@@ -9,6 +9,7 @@ import {
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
 import ImageResizer from "@/components/ImageResizer";
+import AutoTextarea from "@/components/AutoTextarea";
 
 const MAX_IMAGES = 10;
 
@@ -168,12 +169,12 @@ export default function EntryEditModal({ open, entry, onClose, onSubmit }) {
       <div className="space-y-4 pt-3">
         <div>
           <label className="label">Note</label>
-          <textarea
+          <AutoTextarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Write a short note..."
             rows={3}
-            className="input resize-none"
+            className="input overflow-hidden resize-none"
             autoFocus
           />
         </div>

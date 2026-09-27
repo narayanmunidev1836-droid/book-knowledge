@@ -6,10 +6,9 @@ import Nav from "@/components/Nav";
 const links = [
   { href: "/sant", label: "Dashboard" },
   { href: "/sant/entry", label: "New Entry" },
+  { href: "/sant/search", label: "Search" },
   { href: "/sant/books", label: "Books" },
   { href: "/sant/topics", label: "Topics" },
-  { href: "/sant/search", label: "Search" },
-  { href: "/sant/gallery", label: "Gallery" },
 ];
 
 export default async function SantLayout({ children }) {

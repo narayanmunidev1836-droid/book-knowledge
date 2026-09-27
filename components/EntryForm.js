@@ -6,7 +6,6 @@ import { Select } from "antd";
 import {
   SaveOutlined,
   Loading3QuartersOutlined,
-  PlusOutlined,
   PictureOutlined,
   ExpandOutlined,
   EditOutlined,
@@ -14,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
 import ImageResizer from "@/components/ImageResizer";
+import AutoTextarea from "@/components/AutoTextarea";
 
 export default function EntryForm({ onAddBook, newBook }) {
   const router = useRouter();
@@ -25,8 +25,7 @@ export default function EntryForm({ onAddBook, newBook }) {
     page: "",
     note: "",
   });
-  const [newTopic, setNewTopic] = useState("");
-  const [newTopicOpen, setNewTopicOpen] = useState(false);
+  const [topicQuery, setTopicQuery] = useState(""); // text typed in the topic search
   const [images, setImages] = useState([]); // File[]
   const [previews, setPreviews] = useState([]); // object URLs, index-matched
   const [cropQueue, setCropQueue] = useState([]); // indices waiting to be cropped
@@ -153,15 +152,17 @@ export default function EntryForm({ onAddBook, newBook }) {
 
   function handleTopicsChange(values) {
     if (values.includes("__new__")) {
-      setNewTopicOpen(true);
+      // "Add" straight from the search box — no separate input to fill in.
+      addTopic(topicQuery);
       setForm((f) => ({ ...f, topicIds: values.filter((v) => v !== "__new__") }));
       return;
     }
+    setTopicQuery("");
     set("topicIds", values);
   }
 
-  async function handleNewTopic() {
-    const name = newTopic.trim();
+  async function addTopic(rawName) {
+    const name = String(rawName || "").trim();
     if (!name) return;
     const res = await fetch("/api/topics", {
       method: "POST",
@@ -170,14 +171,23 @@ export default function EntryForm({ onAddBook, newBook }) {
     });
     const json = await res.json();
     if (!res.ok) {
+      // Already there (the API rejects duplicates) — just select it.
+      const existing = topics.find(
+        (t) => t.name.trim().toLowerCase() === name.toLowerCase()
+      );
+      if (existing) {
+        setForm((f) => ({ ...f, topicIds: [...f.topicIds, existing._id] }));
+        setTopicQuery("");
+        setMessage({ type: "ok", text: `Topic "${existing.name}" selected` });
+        return;
+      }
       setMessage({ type: "error", text: json.error || "Failed to add topic" });
       return;
     }
     setTopics((t) => [...t, json].sort((a, b) => a.name.localeCompare(b.name)));
     setForm((f) => ({ ...f, topicIds: [...f.topicIds, json._id] }));
-    setNewTopic("");
-    setNewTopicOpen(false);
-    setMessage({ type: "ok", text: "New topic added ✓" });
+    setTopicQuery("");
+    setMessage({ type: "ok", text: `Topic "${json.name}" added ✓` });
   }
 
   async function handleSubmit(e) {
@@ -266,6 +276,8 @@ export default function EntryForm({ onAddBook, newBook }) {
             mode="multiple"
             value={form.topicIds}
             onChange={handleTopicsChange}
+            searchValue={topicQuery}
+            onSearch={setTopicQuery}
             placeholder="— Type to search topics —"
             className="select-input w-full"
             showSearch
@@ -276,31 +288,14 @@ export default function EntryForm({ onAddBook, newBook }) {
                 .toLowerCase()
                 .includes(String(input).toLowerCase())
             }
-            notFoundContent="No topic found — type to search"
+            notFoundContent="Nothing found — use “Add” below to create it"
             options={[
               ...topics.map((t) => ({ value: t._id, label: t.name })),
-              { value: "__new__", label: "+ New topic" },
+              topicQuery.trim()
+                ? { value: "__new__", label: `+ Add “${topicQuery.trim()}”` }
+                : { value: "__new__", label: "+ New topic", disabled: true },
             ]}
           />
-
-          {newTopicOpen && (
-            <div className="mt-2 flex gap-2">
-              <input
-                value={newTopic}
-                onChange={(e) => setNewTopic(e.target.value)}
-                placeholder="New topic name"
-                className="input flex-1"
-              />
-              <button
-                type="button"
-                onClick={handleNewTopic}
-                className="btn-primary !px-3"
-              >
-                <PlusOutlined />
-                Add
-              </button>
-            </div>
-          )}
         </div>
 
         <div>
@@ -330,12 +325,11 @@ export default function EntryForm({ onAddBook, newBook }) {
 
       <div>
         <label className="label">Short Note (optional)</label>
-        <textarea
+        <AutoTextarea
           value={form.note}
           onChange={(e) => set("note", e.target.value)}
-          rows={2}
           placeholder="e.g. This vachan about Guru Bhakti is very beautiful."
-          className="input resize-none"
+          className="input overflow-hidden resize-none"
         />
       </div>
 

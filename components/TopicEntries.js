@@ -266,8 +266,10 @@ export default function TopicEntries({ topicId }) {
                     </span>
                   </td>
                   <td className="px-4 py-2.5">{entry.page || "—"}</td>
-                  <td className="max-w-[16rem] truncate px-4 py-2.5 text-slate-600 italic">
-                    {entry.note || "—"}
+                  <td className="px-4 py-2.5 text-slate-600 italic">
+                    <div className="max-w-[16rem] truncate">
+                      {entry.note || "-"}
+                    </div>
                   </td>
                   <td className="px-4 py-2.5 whitespace-nowrap text-slate-500">
                     {entry.createdAt
@@ -417,7 +419,7 @@ export default function TopicEntries({ topicId }) {
               {selected.note && (
                 <div className="rounded-xl border-l-4 border-emerald-400 bg-emerald-50/60 p-3">
                   <span className="block text-xs text-slate-400">Note</span>
-                  <p className="text-slate-700 italic">“{selected.note}”</p>
+                  <p className="break-words text-slate-700 italic">“{selected.note}”</p>
                 </div>
               )}
               <p className="flex items-center gap-2">

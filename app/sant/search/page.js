@@ -283,7 +283,7 @@ export default function SearchPage() {
               {entries.map((entry, i) => (
                 <div
                   key={entry._id}
-                  className="card card-hover flex flex-col gap-3 p-4 fade-up"
+                  className="card card-hover flex min-w-0 flex-col gap-3 p-4 fade-up"
                   style={{ animationDelay: `${Math.min(i * 0.03, 0.3)}s` }}
                 >
                   <div
@@ -335,7 +335,7 @@ export default function SearchPage() {
                         ))}
                       </span>
                       {entry.note && (
-                        <p className="mt-1 line-clamp-2 text-sm italic text-slate-600">
+                        <p className="mt-1 truncate text-sm italic text-slate-600">
                           “{entry.note}”
                         </p>
                       )}
@@ -432,8 +432,10 @@ export default function SearchPage() {
                         </span>
                       </td>
                       <td className="px-4 py-2.5">{entry.page || "—"}</td>
-                      <td className="max-w-[18rem] truncate px-4 py-2.5 text-slate-600 italic">
-                        {entry.note || "—"}
+                      <td className="px-4 py-2.5 text-slate-600 italic">
+                        <div className="max-w-[18rem] truncate">
+                          {entry.note || "—"}
+                        </div>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-slate-500">
                         {entry.createdAt
@@ -571,7 +573,7 @@ export default function SearchPage() {
               {selected.note && (
                 <div className="rounded-xl border-l-4 border-emerald-400 bg-emerald-50/60 p-3">
                   <span className="block text-xs text-slate-400">Note</span>
-                  <p className="text-slate-700 italic">“{selected.note}”</p>
+                  <p className="break-words text-slate-700 italic">“{selected.note}”</p>
                 </div>
               )}
               <p className="flex items-start gap-2">

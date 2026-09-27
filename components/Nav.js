@@ -14,7 +14,6 @@ import {
   AppstoreOutlined,
   TeamOutlined,
   TagsOutlined,
-  PictureOutlined,
   FileAddOutlined,
   SearchOutlined,
   LockOutlined,
@@ -35,7 +34,6 @@ const ICONS = {
   "/sant/books": BookOutlined,
   "/sant/topics": TagsOutlined,
   "/sant/search": SearchOutlined,
-  "/sant/gallery": PictureOutlined,
 };
 
 function isActivePath(pathname, href) {
