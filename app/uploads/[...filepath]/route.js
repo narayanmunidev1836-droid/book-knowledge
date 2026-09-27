@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFile, stat } from "fs/promises";
 import path from "path";
 import { UPLOAD_ROOT } from "@/lib/upload";
 
@@ -14,6 +14,8 @@ const TYPES = {
   ".heif": "image/heif",
 };
 
+const CACHE_CONTROL = "public, max-age=31536000, immutable";
+
 export async function GET(req, { params }) {
   const { filepath } = await params;
   const parts = Array.isArray(filepath) ? filepath : [filepath];
@@ -27,17 +29,31 @@ export async function GET(req, { params }) {
   }
 
   let data;
+  let meta;
   try {
-    data = await readFile(filePath);
+    [data, meta] = await Promise.all([readFile(filePath), stat(filePath)]);
   } catch {
     return new Response("Not found", { status: 404 });
   }
 
   const ext = path.extname(filePath).toLowerCase();
+  const etag = `"${meta.size.toString(36)}-${Math.floor(meta.mtimeMs).toString(36)}"`;
+  const inm = req.headers.get("if-none-match") || "";
+  const fresh = inm
+    .split(",")
+    .some((tag) => tag.trim() === etag || tag.trim() === `W/${etag}`);
+  if (fresh) {
+    return new Response(null, {
+      status: 304,
+      headers: { etag, "cache-control": CACHE_CONTROL },
+    });
+  }
+
   return new Response(data, {
     headers: {
       "content-type": TYPES[ext] || "application/octet-stream",
-      "cache-control": "public, max-age=0",
+      "cache-control": CACHE_CONTROL,
+      etag,
     },
   });
 }

@@ -102,6 +102,8 @@ export default function SantDashboard() {
               note: json.note,
               image: json.thumb || json.image || "",
               thumb: json.thumb || "",
+              images: json.images || [],
+              thumbs: json.thumbs || [],
               imageCount: count,
               hasFull: count > 0,
             }

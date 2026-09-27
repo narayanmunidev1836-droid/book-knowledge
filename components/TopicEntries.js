@@ -18,6 +18,12 @@ import {
 } from "@ant-design/icons";
 import Spinner from "@/components/Spinner";
 import EntryEditModal from "@/components/EntryEditModal";
+import {
+  neighborsOf,
+  preload,
+  urlsOf,
+  useProgressiveSrc,
+} from "@/lib/progressiveImg";
 
 const topicNamesOf = (entry) =>
   entry.topicNames?.length ? entry.topicNames : [entry.topicName];
@@ -31,7 +37,6 @@ export default function TopicEntries({ topicId }) {
   const [selected, setSelected] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
   const [fullImages, setFullImages] = useState([]);
-  const [fullLoading, setFullLoading] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
 
   useEffect(() => {
@@ -57,13 +62,18 @@ export default function TopicEntries({ topicId }) {
     };
   }, [topicId]);
 
-  // Full-size images are loaded only when the detail dialog opens.
+  // Full image URLs travel with the list — no detail fetch on open.
   const selectedId = selected?._id || null;
   const [prevSelectedId, setPrevSelectedId] = useState(null);
   if (prevSelectedId !== selectedId) {
     setPrevSelectedId(selectedId);
-    setFullImages(selected?.hasFull ? [] : selected?.image ? [selected.image] : []);
-    setFullLoading(Boolean(selected?.hasFull));
+    setFullImages(
+      selected?.images?.length
+        ? selected.images
+        : selected?.image
+          ? [selected.image]
+          : []
+    );
     setImgIdx(0);
   }
 
@@ -78,22 +88,12 @@ export default function TopicEntries({ topicId }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [selected, fullImages.length]);
 
+  // Warm the neighbouring rows while the dialog is open.
   useEffect(() => {
-    if (!selected || !selected.hasFull) return;
-    let cancelled = false;
-    fetch(`/api/entries/${selected._id}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (!cancelled && d) {
-          setFullImages(d.images?.length ? d.images : d.image ? [d.image] : []);
-        }
-      })
-      .catch(() => {})
-      .finally(() => !cancelled && setFullLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [selected]);
+    if (!selected) return;
+    const at = entries.findIndex((e) => e._id === selected._id);
+    preload(neighborsOf(entries, at).flatMap((e) => urlsOf(e)));
+  }, [selected, entries]);
 
   async function handleEdit(payload) {
     const res = await fetch(`/api/entries/${editTarget._id}`, {
@@ -107,6 +107,8 @@ export default function TopicEntries({ topicId }) {
       note: json.note,
       image: json.thumb || "",
       thumb: json.thumb || "",
+      images: json.images || [],
+      thumbs: json.thumbs || [],
       imageCount: count,
       hasFull: count > 0,
     };
@@ -114,10 +116,7 @@ export default function TopicEntries({ topicId }) {
       list.map((e) => (e._id === json._id ? { ...e, ...upd } : e))
     );
     if (selected && selected._id === json._id) {
-      if (!count) {
-        setFullImages([]);
-        setFullLoading(false);
-      }
+      setFullImages(json.images?.length ? json.images : json.thumb ? [json.thumb] : []);
       setImgIdx(0);
       setSelected((s) => (s ? { ...s, ...upd } : s));
     }
@@ -136,6 +135,12 @@ export default function TopicEntries({ topicId }) {
   const safeImgIdx = fullImages.length
     ? Math.min(imgIdx, fullImages.length - 1)
     : 0;
+  const fullSrc = fullImages[safeImgIdx] || null;
+  const thumbSrc =
+    selected?.thumbs?.[safeImgIdx] ||
+    (safeImgIdx === 0 ? selected?.image : null) ||
+    null;
+  const displaySrc = useProgressiveSrc(fullSrc, thumbSrc);
 
   const backLink = (
     <Link
@@ -323,19 +328,21 @@ export default function TopicEntries({ topicId }) {
         {selected && (
           <div className="grid gap-5 pt-2 sm:grid-cols-2">
             <div className="relative flex min-h-[240px] items-center justify-center overflow-hidden rounded-xl bg-slate-100">
-              {fullLoading ? (
-                <span className="flex flex-col items-center gap-3 py-10 text-sm text-slate-500">
-                  <span className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-                  Loading image…
-                </span>
-              ) : fullImages.length ? (
+              {fullImages.length ? (
                 <div className="relative flex w-full items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={fullImages[safeImgIdx]}
+                    src={displaySrc}
                     alt={`${selected.bookName} ${safeImgIdx + 1}`}
                     className="max-h-[70vh] w-auto max-w-full rounded-xl object-contain"
                   />
+                  {fullSrc && displaySrc !== fullSrc && (
+                    <span
+                      role="status"
+                      aria-label="Loading full image"
+                      className="absolute right-3 bottom-3 h-5 w-5 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent"
+                    />
+                  )}
                   {fullImages.length > 1 && (
                     <>
                       <button

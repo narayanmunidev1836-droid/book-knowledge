@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { Book, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
+import { coverUrl } from "@/lib/imgUrl";
 import { saveUpload } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
@@ -31,14 +32,15 @@ export async function GET() {
     : [];
   const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
 
-  return Response.json(
-    toPlain(
-      books.map((b) => ({
-        ...b,
-        entryCount: countMap.get(String(b._id)) || 0,
-      }))
-    )
+  const plain = toPlain(
+    books.map((b) => ({
+      ...b,
+      entryCount: countMap.get(String(b._id)) || 0,
+    }))
   );
+  // Covers are base64 in Mongo — hand out a signed, cacheable URL instead.
+  for (const book of plain) book.cover = coverUrl(book);
+  return Response.json(plain);
 }
 
 export async function POST(req) {
@@ -93,5 +95,7 @@ export async function POST(req) {
     targetType: "book",
     targetId: book._id,
   });
-  return Response.json(toPlain(book), { status: 201 });
+  const plain = toPlain(book);
+  plain.cover = coverUrl(plain);
+  return Response.json(plain, { status: 201 });
 }

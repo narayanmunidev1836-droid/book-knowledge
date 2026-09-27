@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { Entry, Book, Topic } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
+import { entryImgUrls, withEntryUrls } from "@/lib/imgUrl";
 import { processEntryImage } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
@@ -58,8 +59,8 @@ export async function GET(req) {
   }
   if (clauses.length) filter.$and = clauses;
 
-  // Lists ship the small thumb only — the full base64 image is fetched
-  // per-image from GET /api/entries/[id] when the lightbox opens.
+  // Images never travel with the list — each item carries signed URLs that
+  // are minted below (a few hundred bytes instead of megabytes of base64).
   const pipeline = [
     { $match: filter },
     { $sort: { createdAt: -1 } },
@@ -79,9 +80,8 @@ export async function GET(req) {
         uploadedBy: 1,
         uploadedByName: 1,
         createdAt: 1,
-        thumb: 1,
-        // Only the first thumb travels with the list — the rest of the full
-        // images are fetched per-entry from GET /api/entries/[id].
+        // Cache-busting version for the signed image URLs.
+        updatedAt: 1,
         imageCount: {
           $cond: [
             { $gt: [{ $size: { $ifNull: ["$images", []] } }, 0] },
@@ -96,9 +96,6 @@ export async function GET(req) {
             { $gt: [{ $strLenCP: { $ifNull: ["$image", ""] } }, 0] },
           ],
         },
-        image: {
-          $cond: [{ $ifNull: ["$thumb", false] }, "$thumb", "$image"],
-        },
       },
     },
   ];
@@ -107,7 +104,13 @@ export async function GET(req) {
     Entry.aggregate(pipeline),
     paginated ? Entry.countDocuments(filter) : null,
   ]);
-  const items = JSON.parse(JSON.stringify(entries));
+  const items = JSON.parse(JSON.stringify(entries)).map((item) => {
+    const urls = entryImgUrls(String(item._id), item.updatedAt, item.imageCount || 0);
+    item.image = urls.image;
+    item.images = urls.images;
+    item.thumbs = urls.thumbs;
+    return item;
+  });
   if (paginated) {
     return Response.json({
       items,
@@ -201,5 +204,5 @@ export async function POST(req) {
     targetId: entry._id,
   });
 
-  return Response.json(toPlain(entry), { status: 201 });
+  return Response.json(withEntryUrls(toPlain(entry)), { status: 201 });
 }

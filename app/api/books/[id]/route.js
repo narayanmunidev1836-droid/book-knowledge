@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import { Book, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
+import { coverUrl } from "@/lib/imgUrl";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,9 @@ export async function GET(req, { params }) {
   const { id } = await params;
   const book = await loadOwnBook(id, user.id);
   if (!book) return Response.json({ error: "Book not found" }, { status: 404 });
-  return Response.json(toPlain(book));
+  const plain = toPlain(book);
+  plain.cover = coverUrl(plain);
+  return Response.json(plain);
 }
 
 export async function PUT(req, { params }) {
@@ -56,7 +59,9 @@ export async function PUT(req, { params }) {
       { bookName: book.name }
     );
   }
-  return Response.json(toPlain(book));
+  const plain = toPlain(book);
+  plain.cover = coverUrl(plain);
+  return Response.json(plain);
 }
 
 export async function DELETE(req, { params }) {

@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import { Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
+import { entryImgUrls, withEntryUrls, withLiteEntryUrls } from "@/lib/imgUrl";
 import { removeUpload, processEntryImage } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
@@ -24,14 +25,12 @@ export async function GET(req, { params }) {
   if (!entry) return Response.json({ error: "Entry not found" }, { status: 404 });
 
   const plain = toPlain(entry);
-  // ?lite=1 — thumbs only (edit dialogs); the full base64 images stay out.
+  // ?lite=1 — thumb URLs only (edit dialogs); the full images stay out.
   if (new URL(req.url).searchParams.get("lite")) {
-    delete plain.images;
-    plain.image = plain.thumb || "";
-    return Response.json(plain);
+    return Response.json(withLiteEntryUrls(plain));
   }
-  // Full base64 image — only fetched when the lightbox opens.
-  return Response.json(plain);
+  // Full image URLs — they arrive with the list now, this is a fallback.
+  return Response.json(withEntryUrls(plain));
 }
 
 export async function PUT(req, { params }) {
@@ -159,15 +158,22 @@ export async function PUT(req, { params }) {
   await entry.save();
 
   // Slim response — never ship the full base64 images back on update.
-  // `image` mirrors the list shape (first thumb) so clients can refresh rows.
+  // `image` mirrors the list shape (first thumb URL) so clients can refresh rows.
   const plain = toPlain(entry);
+  const urls = entryImgUrls(
+    String(plain._id),
+    plain.updatedAt,
+    plain.images?.length || (plain.image ? 1 : 0)
+  );
   return Response.json({
     _id: plain._id,
     note: plain.note,
     page: plain.page,
-    image: plain.thumb || "",
-    thumb: plain.thumb || "",
-    imageCount: plain.images?.length || (plain.image ? 1 : 0),
+    image: urls.image,
+    thumb: urls.image,
+    images: urls.images,
+    thumbs: urls.thumbs,
+    imageCount: urls.images.length,
   });
 }
 

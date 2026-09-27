@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Image from "next/image";
 import { Modal } from "antd";
 import {
@@ -14,47 +14,32 @@ import {
   UserOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
+import { neighborsOf, preload, urlsOf, useProgressiveSrc } from "@/lib/progressiveImg";
 
 export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = false }) {
   const [active, setActive] = useState(null); // index into slides
-  const [fullImages, setFullImages] = useState({}); // entryId -> full image[]
 
   const close = useCallback(() => setActive(null), []);
 
   const countOf = (e) => e.imageCount || (e.image || e.thumb ? 1 : 0);
   // One slide per image; entries without an image still get a placeholder slide.
-  const slides = [];
-  entries.forEach((entry, ei) => {
-    const n = countOf(entry);
-    if (n <= 0) slides.push({ e: ei, i: -1 });
-    else for (let i = 0; i < n; i++) slides.push({ e: ei, i });
-  });
+  const slides = useMemo(() => {
+    const list = [];
+    entries.forEach((entry, ei) => {
+      const n = countOf(entry);
+      if (n <= 0) list.push({ e: ei, i: -1 });
+      else for (let i = 0; i < n; i++) list.push({ e: ei, i });
+    });
+    return list;
+  }, [entries]);
 
-  // List responses carry only the first thumb — load the full images on first open.
   useEffect(() => {
-    if (active === null || !slides[active]) return;
-    const entry = entries[slides[active].e];
-    if (!entry || !entry.hasFull || fullImages[entry._id]) return;
-    let cancelled = false;
-    fetch(`/api/entries/${entry._id}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (cancelled || !d) return;
-        const list = d.images?.length
-          ? d.images
-          : d.image
-            ? [d.image]
-            : [];
-        if (list.length) {
-          setFullImages((prev) => ({ ...prev, [entry._id]: list }));
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, entries, fullImages]);
+    if (active === null) return;
+    // Warm the previous / next slide so ← → feel instant.
+    preload(
+      neighborsOf(slides, active).flatMap((s) => urlsOf(entries[s.e], s.i))
+    );
+  }, [active, slides, entries]);
 
   useEffect(() => {
     if (active === null) return;
@@ -71,6 +56,17 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
     return () => window.removeEventListener("keydown", onKey);
   }, [active, slides.length, close]);
 
+  // The list already carries signed thumb + full URLs — no detail fetch.
+  const slide = active !== null ? slides[active] : null;
+  const activeEntry = slide ? entries[slide.e] : null;
+  const idx = slide && slide.i >= 0 ? slide.i : -1;
+  const thumbSrc =
+    idx >= 0 && activeEntry
+      ? activeEntry.thumbs?.[idx] || (idx === 0 ? activeEntry.image : null) || null
+      : null;
+  const fullSrc = idx >= 0 && activeEntry ? activeEntry.images?.[idx] || null : null;
+  const activeSrc = useProgressiveSrc(fullSrc, thumbSrc);
+
   if (!entries.length) {
     return (
       <div className="card flex flex-col items-center gap-3 p-12 text-center text-slate-400">
@@ -79,20 +75,6 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
       </div>
     );
   }
-
-  const slide = active !== null ? slides[active] : null;
-  const activeEntry = slide ? entries[slide.e] : null;
-  const activeFull = activeEntry ? fullImages[activeEntry._id] : null;
-  const activeLoading = Boolean(slide && slide.i >= 0 && activeEntry?.hasFull && !activeFull);
-  const activeSrc = !slide || slide.i < 0 || !activeEntry
-    ? null
-    : activeFull
-      ? activeFull[slide.i] ?? null
-      : activeEntry.hasFull
-        ? null
-        : slide.i === 0
-          ? activeEntry.image || null
-          : null;
 
   return (
     <>
@@ -225,16 +207,9 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
           }}
         >
           <div className="fade-up relative mx-auto w-fit overflow-hidden rounded-2xl">
-            {/* Image */}
-            <div className="flex items-center justify-center">
-              {activeLoading ? (
-                <div className="flex h-[50vh] w-[70vw] max-w-4xl items-center justify-center rounded-xl bg-black/40">
-                  <span className="flex flex-col items-center gap-3 text-sm text-slate-300">
-                    <span className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
-                    Loading full image…
-                  </span>
-                </div>
-              ) : activeSrc ? (
+            {/* Image — thumb first (instant), full swaps in when decoded */}
+            <div className="relative flex items-center justify-center">
+              {activeSrc ? (
                 <Image
                   src={activeSrc}
                   alt={activeEntry.bookName}
@@ -249,6 +224,13 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
                     No image for this entry
                   </span>
                 </div>
+              )}
+              {fullSrc && activeSrc !== fullSrc && (
+                <span
+                  role="status"
+                  aria-label="Loading full image"
+                  className="absolute right-3 bottom-3 h-6 w-6 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent"
+                />
               )}
             </div>
 
