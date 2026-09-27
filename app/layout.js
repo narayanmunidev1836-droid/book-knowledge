@@ -19,6 +19,8 @@ export async function generateMetadata() {
     description: "Platform for books, topics and image entries",
     icons: {
       icon: [
+        { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
         { url: "/icon.svg?v=2", type: "image/svg+xml" },
         { url: "/favicon.ico?v=2", sizes: "any" },
       ],
@@ -26,6 +28,10 @@ export async function generateMetadata() {
     },
   };
 }
+
+export const viewport = {
+  themeColor: "#10b981",
+};
 
 export default function RootLayout({ children }) {
   return (
