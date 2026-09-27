@@ -15,6 +15,7 @@ import {
   PictureOutlined,
   InboxOutlined,
   SearchOutlined,
+  HighlightOutlined,
 } from "@ant-design/icons";
 import Spinner from "@/components/Spinner";
 import EntryEditModal from "@/components/EntryEditModal";
@@ -127,7 +128,7 @@ export default function TopicEntries({ topicId }) {
   const term = q.trim().toLowerCase();
   const visible = term
     ? entries.filter((e) =>
-        [e.bookName, e.note, e.page, e.indexNo, ...(e.topicNames || [])]
+        [e.bookName, e.title, e.note, e.page, e.indexNo, ...(e.topicNames || [])]
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(term))
       )
@@ -203,14 +204,115 @@ export default function TopicEntries({ topicId }) {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search in these records — book, page, note…"
+            placeholder="Search in these records — book, title, page, note…"
             className="input !pl-9"
           />
         </div>
       )}
 
-      <div className="fade-up" style={{ animationDelay: "0.1s" }}>
-        <div className="card overflow-x-auto">
+      <div className="space-y-3 fade-up" style={{ animationDelay: "0.1s" }}>
+        {/* Mobile & tablet — search-style cards */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
+          {visible.map((entry, i) => (
+            <div
+              key={entry._id}
+              className="card card-hover flex min-w-0 flex-col gap-3 p-4 fade-up"
+              style={{ animationDelay: `${Math.min(i * 0.03, 0.3)}s` }}
+            >
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelected(entry)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setSelected(entry);
+                }}
+                className="flex cursor-pointer items-start gap-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              >
+                <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100">
+                  {entry.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={entry.image}
+                      alt={entry.bookName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-slate-300">
+                      <PictureOutlined />
+                    </span>
+                  )}
+                  {entry.imageCount > 1 && (
+                    <span className="absolute -top-1.5 -right-1.5 rounded-full bg-emerald-600 px-1.5 text-[10px] font-bold leading-4 text-white">
+                      {entry.imageCount}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  {entry.title && (
+                    <p className="line-clamp-2 break-words font-semibold text-slate-800">
+                      {entry.title}
+                    </p>
+                  )}
+                  <p
+                    className={`truncate ${
+                      entry.title
+                        ? "text-sm font-medium text-slate-500"
+                        : "font-semibold text-slate-800"
+                    }`}
+                  >
+                    {entry.bookName}
+                    {entry.page ? ` - ${entry.page}` : ""}
+                    {entry.indexNo ? ` · idx ${entry.indexNo}` : ""}
+                  </p>
+                  <span className="mt-1 flex flex-wrap gap-1">
+                    {topicNamesOf(entry).map((name) => (
+                      <span
+                        key={name}
+                        className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </span>
+                  {entry.note && (
+                    <p className="mt-1 truncate text-sm italic text-slate-600">
+                      “{entry.note}”
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelected(entry)}
+                  className="icon-btn border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                >
+                  <EyeOutlined /> View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditTarget(entry)}
+                  className="icon-btn border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                >
+                  <EditOutlined /> Edit
+                </button>
+              </div>
+            </div>
+          ))}
+          {visible.length === 0 && (
+            <div className="card col-span-full flex flex-col items-center gap-2 p-10 text-slate-400 sm:col-span-2">
+              <InboxOutlined className="text-3xl text-emerald-300" />
+              <p className="text-sm">
+                {term
+                  ? "No records match your search"
+                  : "No records for this topic yet — add one from New Entry"}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop — table */}
+        <div className="card hidden overflow-x-auto lg:block">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-200 text-slate-500">
               <tr>
@@ -251,8 +353,19 @@ export default function TopicEntries({ topicId }) {
                       )}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 font-semibold text-slate-800">
-                    {entry.bookName}
+                  <td className="px-4 py-2.5 text-slate-800">
+                    <div className="max-w-[14rem]">
+                      {entry.title && (
+                        <p className="truncate font-semibold">{entry.title}</p>
+                      )}
+                      <p
+                        className={`truncate ${
+                          entry.title ? "text-sm text-slate-500" : "font-semibold"
+                        }`}
+                      >
+                        {entry.bookName}
+                      </p>
+                    </div>
                   </td>
                   <td className="px-4 py-2.5">
                     <span className="flex flex-wrap gap-1">
@@ -386,6 +499,17 @@ export default function TopicEntries({ topicId }) {
             </div>
 
             <div className="space-y-3 text-sm">
+              {selected.title && (
+                <p className="flex items-start gap-2">
+                  <HighlightOutlined className="mt-0.5 text-emerald-600" />
+                  <span>
+                    <span className="block text-xs text-slate-400">Title</span>
+                    <span className="font-semibold text-slate-800">
+                      {selected.title}
+                    </span>
+                  </span>
+                </p>
+              )}
               <p className="flex items-start gap-2">
                 <BookOutlined className="mt-0.5 text-emerald-600" />
                 <span>

@@ -318,7 +318,7 @@ export default function SearchPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       {entry.title && (
-                        <p className="truncate font-semibold text-slate-800">
+                        <p className="line-clamp-2 break-words font-semibold text-slate-800">
                           {entry.title}
                         </p>
                       )}
