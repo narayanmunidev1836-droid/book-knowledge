@@ -3,21 +3,17 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Select } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
-  SaveOutlined,
-  CloseOutlined,
   BookOutlined,
   PlusCircleOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import AddBookModal from "@/components/AddBookModal";
+import EditBookModal from "@/components/EditBookModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import Spinner from "@/components/Spinner";
-
-const LANGUAGES = ["Gujarati", "Hindi", "English", "Sanskrit"];
 
 export default function BooksPage() {
   const [books, setBooks] = useState([]);
@@ -31,8 +27,6 @@ export default function BooksPage() {
   const term = search.trim().toLowerCase();
   const filtered = term
     ? books.filter((b) =>
-        // The row being edited stays visible even if the rename hides it.
-        (editing && editing._id === b._id) ||
         [b.name, b.author, b.category, b.language]
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(term))
@@ -50,22 +44,14 @@ export default function BooksPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function saveEdit() {
-    const res = await fetch(`/api/books/${editing._id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editing),
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      setError(json.error || "Save failed");
-      return;
-    }
-    setError("");
+  function handleSaved(updated) {
     setBooks((list) =>
-      list.map((b) => (b._id === json._id ? { ...b, ...json } : b))
+      list
+        .map((b) => (b._id === updated._id ? { ...b, ...updated } : b))
+        .sort((a, b) => a.name.localeCompare(b.name))
     );
     setEditing(null);
+    setError("");
   }
 
   async function handleDelete() {
@@ -110,110 +96,64 @@ export default function BooksPage() {
         <Spinner />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((book) =>
-            editing?._id === book._id ? (
-              <div
-                key={book._id}
-                className="fade-up space-y-2 rounded-2xl border-2 border-emerald-300 bg-emerald-50/50 p-4"
+          {filtered.map((book) => (
+            <div key={book._id} className="card card-hover flex flex-col gap-3 p-4">
+              <Link
+                href={`/sant/books/${book._id}`}
+                title="View entries of this book"
+                className="flex items-start gap-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400"
               >
-                <input
-                  value={editing.name}
-                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                  className="input"
-                  placeholder="Book name"
-                />
-                <input
-                  value={editing.author || ""}
-                  onChange={(e) => setEditing({ ...editing, author: e.target.value })}
-                  className="input"
-                  placeholder="Author"
-                />
-                <input
-                  value={editing.category || ""}
-                  onChange={(e) => setEditing({ ...editing, category: e.target.value })}
-                  className="input"
-                  placeholder="Category"
-                />
-                <Select
-                  value={editing.language}
-                  onChange={(v) => setEditing({ ...editing, language: v })}
-                  className="select-input w-full"
-                  options={LANGUAGES.map((l) => ({ value: l, label: l }))}
-                />
-                <div className="flex gap-2">
-                  <button type="button" onClick={saveEdit} className="btn-primary">
-                    <SaveOutlined /> Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditing(null)}
-                    className="btn-ghost"
-                  >
-                    <CloseOutlined /> Cancel
-                  </button>
+                <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                  {book.cover ? (
+                    <Image
+                      src={book.cover}
+                      alt={book.name}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-emerald-400">
+                      <BookOutlined />
+                    </div>
+                  )}
                 </div>
-              </div>
-            ) : (
-              <div
-                key={book._id}
-                className="card card-hover flex flex-col gap-3 p-4"
-              >
-                <Link
-                  href={`/sant/books/${book._id}`}
-                  title="View entries of this book"
-                  className="flex items-start gap-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-slate-800">{book.name}</p>
+                  <p className="text-sm text-slate-500">
+                    {book.author || "No author"}
+                    {book.publisher ? ` · ${book.publisher}` : ""} · {book.language}
+                  </p>
+                  {book.category && (
+                    <p className="text-xs font-medium text-emerald-600">{book.category}</p>
+                  )}
+                  <span className="mt-1 inline-flex w-fit rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                    {book.entryCount || 0}{" "}
+                    {book.entryCount === 1 ? "record" : "records"}
+                  </span>
+                  <p className="mt-1 text-xs font-medium text-emerald-500">
+                    View related entries →
+                  </p>
+                </div>
+              </Link>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditing(book)}
+                  className="icon-btn border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                 >
-                  <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                    {book.cover ? (
-                      <Image
-                        src={book.cover}
-                        alt={book.name}
-                        fill
-                        sizes="48px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-emerald-400">
-                        <BookOutlined />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-slate-800">{book.name}</p>
-                    <p className="text-sm text-slate-500">
-                      {book.author || "No author"} · {book.language}
-                    </p>
-                    {book.category && (
-                      <p className="text-xs font-medium text-emerald-600">{book.category}</p>
-                    )}
-                    <span className="mt-1 inline-flex w-fit rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                      {book.entryCount || 0}{" "}
-                      {book.entryCount === 1 ? "record" : "records"}
-                    </span>
-                    <p className="mt-1 text-xs font-medium text-emerald-500">
-                      View related entries →
-                    </p>
-                  </div>
-                </Link>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditing(book)}
-                    className="icon-btn border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                  >
-                    <EditOutlined /> Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteTarget(book)}
-                    className="icon-btn border border-red-200 text-red-600 hover:bg-red-50"
-                  >
-                    <DeleteOutlined /> Delete
-                  </button>
-                </div>
+                  <EditOutlined /> Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(book)}
+                  className="icon-btn border border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  <DeleteOutlined /> Delete
+                </button>
               </div>
-            )
-          )}
+            </div>
+          ))}
           {!books.length && (
             <div className="card flex flex-col items-center gap-2 p-10 text-slate-400">
               <PlusCircleOutlined className="text-3xl text-emerald-300" />
@@ -244,6 +184,14 @@ export default function BooksPage() {
             setShowAdd(false);
             setError("");
           }}
+        />
+      )}
+
+      {editing && (
+        <EditBookModal
+          book={editing}
+          onClose={() => setEditing(null)}
+          onSaved={handleSaved}
         />
       )}
 

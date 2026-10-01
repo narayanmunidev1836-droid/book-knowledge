@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Book, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { coverUrl } from "@/lib/imgUrl";
+import { saveUpload, removeUpload } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,23 @@ export async function PUT(req, { params }) {
   const book = await loadOwnBook(id, user.id);
   if (!book) return Response.json({ error: "Book not found" }, { status: 404 });
 
-  const body = await req.json().catch(() => ({}));
+  const contentType = req.headers.get("content-type") || "";
+  let body = {};
+  let coverFile = null;
+  let coverRemoved = false;
+
+  if (contentType.includes("multipart/form-data")) {
+    const form = await req.formData();
+    for (const [key, value] of form.entries()) {
+      if (typeof value === "string") body[key] = value;
+    }
+    const file = form.get("cover");
+    if (file && typeof file !== "string" && file.size > 0) coverFile = file;
+    coverRemoved = form.get("coverRemoved") === "true";
+  } else {
+    body = await req.json().catch(() => ({}));
+  }
+
   const fields = ["name", "author", "publisher", "language", "category"];
   for (const key of fields) {
     if (typeof body[key] === "string") book[key] = body[key].trim();
@@ -43,6 +60,18 @@ export async function PUT(req, { params }) {
   if (body.language && !["Gujarati", "Hindi", "English", "Sanskrit"].includes(body.language)) {
     return Response.json({ error: "Invalid language" }, { status: 400 });
   }
+
+  if (coverFile) {
+    try {
+      book.cover = await saveUpload(coverFile, "covers");
+    } catch (e) {
+      return Response.json({ error: e.message }, { status: 400 });
+    }
+  } else if (coverRemoved && book.cover) {
+    await removeUpload(book.cover);
+    book.cover = null;
+  }
+
   await book.save();
 
   await logActivity({
