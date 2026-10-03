@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Book, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { coverUrl } from "@/lib/imgUrl";
-import { saveUpload } from "@/lib/upload";
+import { saveUpload, removeUpload } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
@@ -69,24 +69,33 @@ export async function POST(req) {
     return Response.json({ error: "You already have this book" }, { status: 409 });
   }
 
+  // Mint the id first so the cover key (covers/<bookId>.webp) is known.
+  const bookId = new mongoose.Types.ObjectId();
   let cover = null;
   if (coverFile && typeof coverFile !== "string" && coverFile.size > 0) {
     try {
-      cover = await saveUpload(coverFile, "covers");
+      cover = await saveUpload(coverFile, bookId);
     } catch (e) {
       return Response.json({ error: e.message }, { status: 400 });
     }
   }
 
-  const book = await Book.create({
-    name,
-    author,
-    publisher,
-    language,
-    category,
-    cover,
-    createdBy: user.id,
-  });
+  let book;
+  try {
+    book = await Book.create({
+      _id: bookId,
+      name,
+      author,
+      publisher,
+      language,
+      category,
+      cover,
+      createdBy: user.id,
+    });
+  } catch (e) {
+    if (cover) await removeUpload(cover);
+    throw e;
+  }
 
   await logActivity({
     user,

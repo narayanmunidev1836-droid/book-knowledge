@@ -2,7 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Book, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { coverUrl } from "@/lib/imgUrl";
-import { saveUpload, removeUpload } from "@/lib/upload";
+import { saveUpload, removeUpload, removeEntryImages } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +63,7 @@ export async function PUT(req, { params }) {
 
   if (coverFile) {
     try {
-      book.cover = await saveUpload(coverFile, "covers");
+      book.cover = await saveUpload(coverFile, book._id);
     } catch (e) {
       return Response.json({ error: e.message }, { status: 400 });
     }
@@ -101,6 +101,10 @@ export async function DELETE(req, { params }) {
   const book = await loadOwnBook(id, user.id);
   if (!book) return Response.json({ error: "Book not found" }, { status: 404 });
 
+  const entries = await Entry.find({ book: book._id, uploadedBy: user.id })
+    .select("image thumb images thumbs")
+    .lean();
+
   await Entry.deleteMany({ book: book._id, uploadedBy: user.id });
   await logActivity({
     user,
@@ -110,5 +114,9 @@ export async function DELETE(req, { params }) {
     targetId: book._id,
   });
   await book.deleteOne();
+
+  // R2 objects are keyed independently — drop them once the docs are gone.
+  for (const entry of entries) await removeEntryImages(entry);
+  if (book.cover) await removeUpload(book.cover);
   return Response.json({ ok: true });
 }

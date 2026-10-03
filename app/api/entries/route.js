@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Entry, Book, Topic } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { entryImgUrls, withEntryUrls } from "@/lib/imgUrl";
-import { processEntryImage } from "@/lib/upload";
+import { processEntryImage, removeUploads } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
@@ -170,41 +170,49 @@ export async function POST(req) {
   }
   const ordered = topicIds.map((id) => topics.find((t) => String(t._id) === id));
 
+  // The _id is minted up front so image keys (entries/<id>/<n>/…) are known
+  // before the document exists.
+  const entryId = new mongoose.Types.ObjectId();
   let processed = [];
   if (imageFiles.length) {
-    // Keep the whole set safely under Mongo's 16MB document limit.
-    const perImage = Math.min(
-      6 * 1024 * 1024,
-      Math.floor((14 * 1024 * 1024) / imageFiles.length)
-    );
     try {
-      for (const file of imageFiles) {
-        const one = await processEntryImage(file, { maxBytes: perImage });
+      for (const [i, file] of imageFiles.entries()) {
+        const one = await processEntryImage(file, { entryId, index: i });
         if (one) processed.push(one);
       }
     } catch (e) {
+      await removeUploads(processed.flatMap((p) => [p.image, p.thumb]));
       return Response.json({ error: e.message }, { status: 400 });
     }
   }
+  const uploadedKeys = processed.flatMap((p) => [p.image, p.thumb]);
 
-  const entry = await Entry.create({
-    book: book._id,
-    bookName: book.name,
-    title: title || undefined,
-    topic: ordered[0]._id,
-    topicName: ordered[0].name,
-    topics: ordered.map((t) => t._id),
-    topicNames: ordered.map((t) => t.name),
-    page: pageRaw ? Number(pageRaw) : undefined,
-    indexNo: indexRaw ? Number(indexRaw) : undefined,
-    image: processed[0]?.image || "",
-    thumb: processed[0]?.thumb || undefined,
-    images: processed.map((p) => p.image),
-    thumbs: processed.map((p) => p.thumb),
-    note,
-    uploadedBy: user.id,
-    uploadedByName: user.name,
-  });
+  let entry;
+  try {
+    entry = await Entry.create({
+      _id: entryId,
+      book: book._id,
+      bookName: book.name,
+      title: title || undefined,
+      topic: ordered[0]._id,
+      topicName: ordered[0].name,
+      topics: ordered.map((t) => t._id),
+      topicNames: ordered.map((t) => t.name),
+      page: pageRaw ? Number(pageRaw) : undefined,
+      indexNo: indexRaw ? Number(indexRaw) : undefined,
+      image: processed[0]?.image || "",
+      thumb: processed[0]?.thumb || undefined,
+      images: processed.map((p) => p.image),
+      thumbs: processed.map((p) => p.thumb),
+      note,
+      uploadedBy: user.id,
+      uploadedByName: user.name,
+    });
+  } catch (e) {
+    // Never leave orphaned objects behind if the document write fails.
+    await removeUploads(uploadedKeys);
+    throw e;
+  }
 
   await logActivity({
     user,

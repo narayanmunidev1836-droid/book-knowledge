@@ -6,6 +6,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Entry, Book } from "@/lib/models";
 import { verifySig, versionOf } from "@/lib/imgUrl";
 import { UPLOAD_ROOT } from "@/lib/upload";
+import { getObject, isR2Key, publicR2Url } from "@/lib/r2";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,19 @@ async function readLegacyFile(src) {
   } catch {
     return null;
   }
+}
+
+/** R2 key → bytes; data-URI / legacy /uploads path → local fallbacks. */
+async function resolveImage(src) {
+  if (!src) return null;
+  if (isR2Key(src)) {
+    const obj = await getObject(src);
+    if (!obj || !obj.buffer.length) return null;
+    return { buffer: obj.buffer, type: obj.contentType || "image/webp" };
+  }
+  if (src.startsWith("data:")) return decodeDataUri(src);
+  if (src.startsWith("/uploads/")) return readLegacyFile(src);
+  return null;
 }
 
 export async function GET(req, { params }) {
@@ -137,11 +151,16 @@ export async function GET(req, { params }) {
   }
   if (!src) return Response.json({ error: "Not found" }, { status: 404 });
 
-  const decoded = src.startsWith("data:")
-    ? decodeDataUri(src)
-    : src.startsWith("/uploads/")
-      ? await readLegacyFile(src)
-      : null;
+  // Public bucket / custom domain configured → let the CDN serve it directly.
+  const publicUrl = publicR2Url(src);
+  if (publicUrl) {
+    return new Response(null, {
+      status: 302,
+      headers: { location: publicUrl, "cache-control": "private, max-age=60" },
+    });
+  }
+
+  const decoded = await resolveImage(src);
   if (!decoded || !decoded.buffer.length) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }

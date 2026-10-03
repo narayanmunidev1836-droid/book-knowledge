@@ -2,7 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { entryImgUrls, withEntryUrls, withLiteEntryUrls } from "@/lib/imgUrl";
-import { removeUpload, processEntryImage } from "@/lib/upload";
+import { removeUpload, removeUploads, processEntryImage } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
@@ -121,6 +121,7 @@ export async function PUT(req, { params }) {
 
   // Append new images.
   let addedCount = 0;
+  const uploaded = [];
   if (newFiles.length) {
     const total = imgs.length + newFiles.length;
     if (total > 10) {
@@ -129,21 +130,24 @@ export async function PUT(req, { params }) {
         { status: 400 }
       );
     }
-    // Keep the whole set safely under Mongo's 16MB document limit.
-    const perImage = Math.min(
-      6 * 1024 * 1024,
-      Math.floor((14 * 1024 * 1024) / total)
-    );
+    // Keys are entries/<entryId>/<index>/… — indices follow the kept order.
+    let nextIndex = imgs.length;
     try {
       for (const file of newFiles) {
-        const one = await processEntryImage(file, { maxBytes: perImage });
+        const one = await processEntryImage(file, {
+          entryId: entry._id,
+          index: nextIndex,
+        });
         if (one) {
           imgs.push(one.image);
           thbs.push(one.thumb);
+          uploaded.push(one.image, one.thumb);
+          nextIndex++;
           addedCount++;
         }
       }
     } catch (e) {
+      await removeUploads(uploaded);
       return Response.json({ error: e.message }, { status: 400 });
     }
   }
@@ -168,7 +172,12 @@ export async function PUT(req, { params }) {
     targetType: "entry",
     targetId: entry._id,
   });
-  await entry.save();
+  try {
+    await entry.save();
+  } catch (e) {
+    await removeUploads(uploaded);
+    throw e;
+  }
 
   // Slim response — never ship the full base64 images back on update.
   // `image` mirrors the list shape (first thumb URL) so clients can refresh rows.

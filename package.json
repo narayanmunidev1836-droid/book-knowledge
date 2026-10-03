@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.4",
+    "@aws-sdk/client-s3": "^3.1146.0",
     "antd": "^6.6.5",
     "bcryptjs": "^3.0.3",
     "mongoose": "^9.10.2",

@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Topic, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { logActivity } from "@/lib/logActivity";
+import { removeEntryImages } from "@/lib/upload";
 
 export const dynamic = "force-dynamic";
 
@@ -96,6 +97,7 @@ export async function DELETE(req, { params }) {
       await Entry.updateOne({ _id: entry._id }, { topic: remaining, topicName: remainingName });
     } else {
       await Entry.deleteOne({ _id: entry._id });
+      await removeEntryImages(entry);
     }
   }
 
