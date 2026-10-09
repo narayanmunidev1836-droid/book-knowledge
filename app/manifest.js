@@ -10,7 +10,7 @@ export default async function manifest() {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f1f5f9",
+    background_color: "#fdfaf8",
     theme_color: "#c4511f",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

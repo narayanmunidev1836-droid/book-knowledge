@@ -75,7 +75,7 @@ export default function ChangePasswordModal({ open, onClose }) {
           borderColor: "transparent",
           borderRadius: "0.75rem",
           fontWeight: 600,
-          boxShadow: "0 1px 2px rgba(5,150,105,0.3)",
+          boxShadow: "0 1px 2px rgba(142,31,10,0.3)",
         },
       }}
       cancelButtonProps={{ disabled: pending, style: { borderRadius: "0.75rem" } }}

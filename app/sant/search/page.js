@@ -13,6 +13,8 @@ import {
   UserOutlined,
   CalendarOutlined,
   PictureOutlined,
+  FullscreenOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { Select, Modal } from "antd";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -44,6 +46,7 @@ export default function SearchPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [fullImages, setFullImages] = useState([]);
   const [imgIdx, setImgIdx] = useState(0); // current photo in the detail modal
+  const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
     fetch("/api/topics")
@@ -157,6 +160,19 @@ export default function SearchPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [selected, fullImages.length]);
+
+  // Esc closes the fullscreen viewer only (capture, so the modal stays open).
+  useEffect(() => {
+    if (!fullscreen) return;
+    function onKey(e) {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setFullscreen(false);
+      }
+    }
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [fullscreen]);
 
   // Warm the neighbouring rows while the detail modal is open.
   useEffect(() => {
@@ -520,7 +536,10 @@ export default function SearchPage() {
 
       <Modal
         open={!!selected}
-        onCancel={() => setSelected(null)}
+        onCancel={() => {
+          setSelected(null);
+          setFullscreen(false);
+        }}
         footer={null}
         width="min(1000px, 94vw)"
         centered
@@ -535,8 +554,18 @@ export default function SearchPage() {
                   <img
                     src={displaySrc}
                     alt={`${selected.bookName} ${safeImgIdx + 1}`}
-                    className="max-h-[70vh] w-auto max-w-full rounded-xl object-contain"
+                    onClick={() => setFullscreen(true)}
+                    title="Click to view full screen"
+                    className="max-h-[70vh] w-auto max-w-full cursor-zoom-in rounded-xl object-contain"
                   />
+                  <button
+                    type="button"
+                    aria-label="View full screen"
+                    onClick={() => setFullscreen(true)}
+                    className="absolute top-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-emerald-600"
+                  >
+                    <FullscreenOutlined />
+                  </button>
                   {fullSrc && displaySrc !== fullSrc && (
                     <span
                       role="status"
@@ -667,6 +696,58 @@ export default function SearchPage() {
           </div>
         )}
       </Modal>
+
+      {fullscreen && fullSrc && (
+        <div
+          className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/95"
+          onClick={() => setFullscreen(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={displaySrc}
+            alt={`${selected?.bookName || ""} ${safeImgIdx + 1}`}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-screen max-w-full object-contain"
+          />
+          <button
+            type="button"
+            aria-label="Close full screen"
+            onClick={() => setFullscreen(false)}
+            className="absolute top-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-xl text-white backdrop-blur transition hover:bg-emerald-600"
+          >
+            <CloseOutlined />
+          </button>
+          {fullImages.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous photo"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setImgIdx((i) => (i - 1 + fullImages.length) % fullImages.length);
+                }}
+                className="absolute left-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-2xl text-white backdrop-blur transition hover:bg-emerald-600"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                aria-label="Next photo"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setImgIdx((i) => (i + 1) % fullImages.length);
+                }}
+                className="absolute right-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-2xl text-white backdrop-blur transition hover:bg-emerald-600"
+              >
+                ›
+              </button>
+              <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                {safeImgIdx + 1} / {fullImages.length}
+              </span>
+            </>
+          )}
+        </div>
+      )}
 
       <ConfirmModal
         open={!!deleteTarget}
