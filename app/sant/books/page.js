@@ -9,6 +9,7 @@ import {
   BookOutlined,
   PlusCircleOutlined,
   SearchOutlined,
+  ReadOutlined,
 } from "@ant-design/icons";
 import AddBookModal from "@/components/AddBookModal";
 import EditBookModal from "@/components/EditBookModal";
@@ -138,6 +139,14 @@ export default function BooksPage() {
                 </div>
               </Link>
               <div className="flex gap-2">
+                {book.hasPdf && (
+                  <Link
+                    href={`/sant/books/${book._id}/read`}
+                    className="icon-btn border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    <ReadOutlined /> Read
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => setEditing(book)}

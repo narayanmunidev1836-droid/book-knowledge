@@ -7,6 +7,7 @@ import {
   Loading3QuartersOutlined,
   PlusCircleOutlined,
   ExpandOutlined,
+  FilePdfOutlined,
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
 import ImageResizer from "@/components/ImageResizer";
@@ -21,6 +22,7 @@ export default function AddBookModal({ onClose, onCreated }) {
     language: "Gujarati",
     category: "",
   });
+  const [pdf, setPdf] = useState(null);
   const [cover, setCover] = useState(null);
   const [coverPreview, setCoverPreview] = useState("");
   const [resizeOpen, setResizeOpen] = useState(false);
@@ -54,6 +56,17 @@ export default function AddBookModal({ onClose, onCreated }) {
     setResizeOpen(true);
   }
 
+  function handlePdf(e) {
+    const file = e.target.files?.[0] || null;
+    if (file && file.size > 50 * 1024 * 1024) {
+      setMessage({ type: "error", text: "PDF size must be less than 50MB" });
+      e.target.value = "";
+      return;
+    }
+    setMessage(null);
+    setPdf(file);
+  }
+
   function discardCover() {
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCover(null);
@@ -82,6 +95,7 @@ export default function AddBookModal({ onClose, onCreated }) {
     const data = new FormData();
     Object.entries(form).forEach(([key, value]) => data.append(key, value));
     if (cover) data.append("cover", cover);
+    if (pdf) data.append("pdf", pdf);
 
     try {
       const res = await fetch("/api/books", { method: "POST", body: data });
@@ -198,6 +212,20 @@ export default function AddBookModal({ onClose, onCreated }) {
               onUseOriginal={() => setResizeOpen(false)}
               onConfirm={applyResizedCover}
             />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">Book PDF (optional, max 50MB)</label>
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={handlePdf}
+              className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
+            />
+            {pdf && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                <FilePdfOutlined className="text-emerald-600" /> {pdf.name}
+              </p>
+            )}
           </div>
         </div>
 

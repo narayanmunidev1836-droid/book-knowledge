@@ -1,8 +1,9 @@
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
-import { User } from "@/lib/models";
+import { User, Book, Topic, Entry } from "@/lib/models";
 import { requireRole } from "@/lib/session";
 import { logActivity } from "@/lib/logActivity";
+import { removeUpload, removeEntryImages } from "@/lib/upload";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,26 @@ export async function DELETE(req, { params }) {
   const target = await User.findById(id).catch(() => null);
   if (!target) return Response.json({ error: "User not found" }, { status: 404 });
 
+  // Collect everything the sant owns so the R2 objects can be dropped too.
+  const [entries, books] = await Promise.all([
+    Entry.find({ uploadedBy: target._id })
+      .select("image thumb images thumbs")
+      .lean(),
+    Book.find({ createdBy: target._id }).select("cover pdf").lean(),
+  ]);
+
+  await Entry.deleteMany({ uploadedBy: target._id });
+  await Book.deleteMany({ createdBy: target._id });
+  await Topic.deleteMany({ createdBy: target._id });
   await target.deleteOne();
+
+  // R2 objects are keyed independently — remove them once the docs are gone.
+  for (const entry of entries) await removeEntryImages(entry);
+  for (const book of books) {
+    await removeUpload(book.cover);
+    await removeUpload(book.pdf);
+  }
+
   await logActivity({
     user: admin,
     action: "user.delete",

@@ -16,6 +16,7 @@ import {
   PictureOutlined,
   InboxOutlined,
   HighlightOutlined,
+  FilePdfOutlined,
 } from "@ant-design/icons";
 import Spinner from "@/components/Spinner";
 import EntryEditModal from "@/components/EntryEditModal";
@@ -196,6 +197,14 @@ export default function BookEntries({ bookId }) {
             <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
               {entries.length} {entries.length === 1 ? "entry" : "entries"}
             </span>
+            {book.hasPdf && (
+              <Link
+                href={`/sant/books/${book._id}/read?from=detail`}
+                className="btn-primary !px-3 !py-1 text-xs"
+              >
+                <FilePdfOutlined /> Read PDF
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Book, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { coverUrl } from "@/lib/imgUrl";
-import { saveUpload, removeUpload, removeEntryImages } from "@/lib/upload";
+import { saveUpload, savePdf, removeUpload, removeEntryImages } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +16,14 @@ async function loadOwnBook(id, userId) {
   }
 }
 
+function publicBook(book) {
+  const plain = toPlain(book);
+  plain.cover = coverUrl(plain);
+  plain.hasPdf = Boolean(plain.pdf);
+  delete plain.pdf;
+  return plain;
+}
+
 export async function GET(req, { params }) {
   const { user, error } = await requireRole("sant", "admin");
   if (error) return error;
@@ -23,9 +31,7 @@ export async function GET(req, { params }) {
   const { id } = await params;
   const book = await loadOwnBook(id, user.id);
   if (!book) return Response.json({ error: "Book not found" }, { status: 404 });
-  const plain = toPlain(book);
-  plain.cover = coverUrl(plain);
-  return Response.json(plain);
+  return Response.json(publicBook(book));
 }
 
 export async function PUT(req, { params }) {
@@ -40,6 +46,8 @@ export async function PUT(req, { params }) {
   let body = {};
   let coverFile = null;
   let coverRemoved = false;
+  let pdfFile = null;
+  let pdfRemoved = false;
 
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
@@ -49,6 +57,9 @@ export async function PUT(req, { params }) {
     const file = form.get("cover");
     if (file && typeof file !== "string" && file.size > 0) coverFile = file;
     coverRemoved = form.get("coverRemoved") === "true";
+    const pdf = form.get("pdf");
+    if (pdf && typeof pdf !== "string" && pdf.size > 0) pdfFile = pdf;
+    pdfRemoved = form.get("pdfRemoved") === "true";
   } else {
     body = await req.json().catch(() => ({}));
   }
@@ -72,7 +83,32 @@ export async function PUT(req, { params }) {
     book.cover = null;
   }
 
-  await book.save();
+  let oldPdf = null;
+  let newPdf = null;
+  if (pdfFile) {
+    try {
+      newPdf = await savePdf(pdfFile, book._id);
+    } catch (e) {
+      return Response.json({ error: e.message }, { status: 400 });
+    }
+    oldPdf = book.pdf;
+    book.pdf = newPdf.key;
+    book.pdfName = newPdf.name;
+    book.pdfSize = newPdf.size;
+  } else if (pdfRemoved && book.pdf) {
+    oldPdf = book.pdf;
+    book.pdf = undefined;
+    book.pdfName = undefined;
+    book.pdfSize = undefined;
+  }
+
+  try {
+    await book.save();
+  } catch (e) {
+    if (newPdf) await removeUpload(newPdf.key);
+    throw e;
+  }
+  if (oldPdf) await removeUpload(oldPdf);
 
   await logActivity({
     user,
@@ -88,9 +124,7 @@ export async function PUT(req, { params }) {
       { bookName: book.name }
     );
   }
-  const plain = toPlain(book);
-  plain.cover = coverUrl(plain);
-  return Response.json(plain);
+  return Response.json(publicBook(book));
 }
 
 export async function DELETE(req, { params }) {
@@ -118,5 +152,6 @@ export async function DELETE(req, { params }) {
   // R2 objects are keyed independently — drop them once the docs are gone.
   for (const entry of entries) await removeEntryImages(entry);
   if (book.cover) await removeUpload(book.cover);
+  if (book.pdf) await removeUpload(book.pdf);
   return Response.json({ ok: true });
 }

@@ -8,6 +8,7 @@ import {
   EditOutlined,
   ExpandOutlined,
   DeleteOutlined,
+  FilePdfOutlined,
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
 import ImageResizer from "@/components/ImageResizer";
@@ -23,6 +24,8 @@ export default function EditBookModal({ book, onClose, onSaved }) {
     language: book?.language || "Gujarati",
     category: book?.category || "",
   });
+  const [pdf, setPdf] = useState(null);
+  const [pdfRemoved, setPdfRemoved] = useState(false);
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState("");
   const [coverRemoved, setCoverRemoved] = useState(false);
@@ -68,6 +71,18 @@ export default function EditBookModal({ book, onClose, onSaved }) {
     setResizeOpen(true);
   }
 
+  function handlePdf(e) {
+    const file = e.target.files?.[0] || null;
+    if (file && file.size > 50 * 1024 * 1024) {
+      setMessage({ type: "error", text: "PDF size must be less than 50MB" });
+      e.target.value = "";
+      return;
+    }
+    setMessage(null);
+    setPdf(file);
+    if (file) setPdfRemoved(false);
+  }
+
   function discardPicked() {
     if (coverFile) {
       if (coverPreview) URL.revokeObjectURL(coverPreview);
@@ -106,6 +121,8 @@ export default function EditBookModal({ book, onClose, onSaved }) {
     FIELDS.forEach((key) => data.append(key, form[key] ?? ""));
     if (coverFile) data.append("cover", coverFile);
     else if (coverRemoved) data.append("coverRemoved", "true");
+    if (pdf) data.append("pdf", pdf);
+    else if (pdfRemoved) data.append("pdfRemoved", "true");
 
     try {
       const res = await fetch(`/api/books/${encodeURIComponent(book._id)}`, {
@@ -235,6 +252,35 @@ export default function EditBookModal({ book, onClose, onSaved }) {
               onUseOriginal={() => setResizeOpen(false)}
               onConfirm={applyResized}
             />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">Book PDF (max 50MB)</label>
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={handlePdf}
+              className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
+            />
+            {pdf ? (
+              <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                <FilePdfOutlined className="text-emerald-600" /> {pdf.name} (will replace current PDF)
+              </p>
+            ) : book?.hasPdf && !pdfRemoved ? (
+              <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                <span className="flex items-center gap-1">
+                  <FilePdfOutlined className="text-emerald-600" /> PDF uploaded
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPdfRemoved(true)}
+                  className="btn-ghost !py-1.5 text-xs !text-red-600"
+                >
+                  <DeleteOutlined /> Remove PDF
+                </button>
+              </div>
+            ) : pdfRemoved ? (
+              <p className="mt-1 text-xs text-red-500">PDF will be removed when you save.</p>
+            ) : null}
           </div>
         </div>
 

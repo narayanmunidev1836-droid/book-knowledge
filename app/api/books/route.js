@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Book, Entry } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
 import { coverUrl } from "@/lib/imgUrl";
-import { saveUpload, removeUpload } from "@/lib/upload";
+import { saveUpload, savePdf, removeUpload } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,11 @@ export async function GET() {
     }))
   );
   // Covers are base64 in Mongo — hand out a signed, cacheable URL instead.
-  for (const book of plain) book.cover = coverUrl(book);
+  for (const book of plain) {
+    book.cover = coverUrl(book);
+    book.hasPdf = Boolean(book.pdf);
+    delete book.pdf;
+  }
   return Response.json(plain);
 }
 
@@ -55,6 +59,7 @@ export async function POST(req) {
   const language = String(form.get("language") || "Gujarati");
   const category = String(form.get("category") || "").trim();
   const coverFile = form.get("cover");
+  const pdfFile = form.get("pdf");
 
   if (!name) {
     return Response.json({ error: "Book name is required" }, { status: 400 });
@@ -80,6 +85,16 @@ export async function POST(req) {
     }
   }
 
+  let pdf = null;
+  if (pdfFile && typeof pdfFile !== "string" && pdfFile.size > 0) {
+    try {
+      pdf = await savePdf(pdfFile, bookId);
+    } catch (e) {
+      if (cover) await removeUpload(cover);
+      return Response.json({ error: e.message }, { status: 400 });
+    }
+  }
+
   let book;
   try {
     book = await Book.create({
@@ -90,10 +105,14 @@ export async function POST(req) {
       language,
       category,
       cover,
+      pdf: pdf?.key,
+      pdfName: pdf?.name,
+      pdfSize: pdf?.size,
       createdBy: user.id,
     });
   } catch (e) {
     if (cover) await removeUpload(cover);
+    if (pdf) await removeUpload(pdf.key);
     throw e;
   }
 
@@ -106,5 +125,7 @@ export async function POST(req) {
   });
   const plain = toPlain(book);
   plain.cover = coverUrl(plain);
+  plain.hasPdf = Boolean(plain.pdf);
+  delete plain.pdf;
   return Response.json(plain, { status: 201 });
 }

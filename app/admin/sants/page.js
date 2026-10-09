@@ -256,38 +256,42 @@ export default function AdminSantsPage() {
                       >
                         <EditOutlined /> Edit
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleActive(u)}
-                        className="icon-btn border border-slate-200 text-slate-600 hover:bg-slate-100"
-                      >
-                        {u.active ? (
-                          <>
-                            <StopOutlined /> Disable
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircleOutlined /> Enable
-                          </>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPasswordTarget(u);
-                          setPasswordText("");
-                        }}
-                        className="icon-btn border border-amber-200 text-amber-600 hover:bg-amber-50"
-                      >
-                        <KeyOutlined /> Password
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTarget(u)}
-                        className="icon-btn border border-red-200 text-red-600 hover:bg-red-50"
-                      >
-                        <DeleteOutlined /> Delete
-                      </button>
+                      {u.role !== "admin" && (
+                        <>
+                        <button
+                          type="button"
+                          onClick={() => toggleActive(u)}
+                          className="icon-btn border border-slate-200 text-slate-600 hover:bg-slate-100"
+                        >
+                          {u.active ? (
+                            <>
+                              <StopOutlined /> Disable
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircleOutlined /> Enable
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPasswordTarget(u);
+                            setPasswordText("");
+                          }}
+                          className="icon-btn border border-amber-200 text-amber-600 hover:bg-amber-50"
+                        >
+                          <KeyOutlined /> Password
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(u)}
+                          className="icon-btn border border-red-200 text-red-600 hover:bg-red-50"
+                        >
+                          <DeleteOutlined /> Delete
+                        </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
