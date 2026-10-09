@@ -21,6 +21,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import Spinner from "@/components/Spinner";
 import ConfirmModal from "@/components/ConfirmModal";
 import EntryEditModal from "@/components/EntryEditModal";
+import { matchesText } from "@/lib/translit";
 import {
   neighborsOf,
   preload,
@@ -259,7 +260,7 @@ export default function SearchPage() {
             placeholder="— All topics —"
             className="select-input w-full"
             showSearch
-            optionFilterProp="label"
+            filterOption={(input, option) => matchesText(input, option?.label)}
             options={topics.map((t) => ({ value: t._id, label: t.name }))}
           />
         </div>

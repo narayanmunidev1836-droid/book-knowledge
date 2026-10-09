@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import { Activity } from "@/lib/models";
 import { requireRole, toPlain } from "@/lib/session";
+import { gujaratiPattern } from "@/lib/translit";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,14 @@ export async function GET(req) {
   if (action && action !== "all") filter.action = action;
   if (q) {
     const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    filter.$or = [{ actorName: rx }, { detail: rx }];
+    let phonetic = null;
+    try {
+      const src = gujaratiPattern(q);
+      if (src) phonetic = new RegExp(src);
+    } catch {}
+    filter.$or = ["actorName", "detail"].flatMap((f) =>
+      phonetic ? [{ [f]: rx }, { [f]: phonetic }] : [{ [f]: rx }]
+    );
   }
 
   const [items, total] = await Promise.all([

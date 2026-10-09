@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import Spinner from "@/components/Spinner";
+import { matchesText } from "@/lib/translit";
 
 // Same order the API returns with ?sort=count: busiest topic first.
 const byCountThenName = (a, b) =>
@@ -34,7 +35,7 @@ export default function SantTopicsPage() {
         (t) =>
           // The row being edited stays visible even if the rename hides it.
           (editing && editing._id === t._id) ||
-          t.name.toLowerCase().includes(term)
+          matchesText(term, t.name)
       )
     : topics;
 

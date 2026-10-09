@@ -25,6 +25,7 @@ import {
   urlsOf,
   useProgressiveSrc,
 } from "@/lib/progressiveImg";
+import { matchesText } from "@/lib/translit";
 
 const topicNamesOf = (entry) =>
   entry.topicNames?.length ? entry.topicNames : [entry.topicName];
@@ -130,7 +131,7 @@ export default function TopicEntries({ topicId }) {
     ? entries.filter((e) =>
         [e.bookName, e.title, e.note, e.page, e.indexNo, ...(e.topicNames || [])]
           .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(term))
+          .some((v) => matchesText(term, v))
       )
     : entries;
 

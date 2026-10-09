@@ -5,6 +5,7 @@ import { requireRole, toPlain } from "@/lib/session";
 import { entryImgUrls, withEntryUrls } from "@/lib/imgUrl";
 import { processEntryImage, removeUploads } from "@/lib/upload";
 import { logActivity } from "@/lib/logActivity";
+import { gujaratiPattern } from "@/lib/translit";
 
 export const dynamic = "force-dynamic";
 
@@ -47,15 +48,15 @@ export async function GET(req) {
   }
   if (q) {
     const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    // English typing also matches Gujarati text (e.g. "nimabai" -> નીમાબાઈ).
+    let phonetic = null;
+    try {
+      const src = gujaratiPattern(q);
+      if (src) phonetic = new RegExp(src);
+    } catch {}
+    const fields = ["title", "bookName", "topicName", "topicNames", "uploadedByName", "note"];
     clauses.push({
-      $or: [
-        { title: rx },
-        { bookName: rx },
-        { topicName: rx },
-        { topicNames: rx },
-        { uploadedByName: rx },
-        { note: rx },
-      ],
+      $or: fields.flatMap((f) => (phonetic ? [{ [f]: rx }, { [f]: phonetic }] : [{ [f]: rx }])),
     });
   }
   if (clauses.length) filter.$and = clauses;

@@ -14,6 +14,7 @@ import AddBookModal from "@/components/AddBookModal";
 import EditBookModal from "@/components/EditBookModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import Spinner from "@/components/Spinner";
+import { matchesText } from "@/lib/translit";
 
 export default function BooksPage() {
   const [books, setBooks] = useState([]);
@@ -29,7 +30,7 @@ export default function BooksPage() {
     ? books.filter((b) =>
         [b.name, b.author, b.category, b.language]
           .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(term))
+          .some((v) => matchesText(term, v))
       )
     : books;
 

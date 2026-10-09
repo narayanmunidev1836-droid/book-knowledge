@@ -1,5 +1,7 @@
 "use client";
 
+import { matchesText } from "@/lib/translit";
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Select } from "antd";
@@ -246,10 +248,7 @@ export default function EntryForm({ onAddBook, newBook }) {
             showSearch
             optionFilterProp="label"
             filterOption={(input, option) =>
-              option?.value === "__add__" ||
-              String(option?.label || "")
-                .toLowerCase()
-                .includes(String(input).toLowerCase())
+              option?.value === "__add__" || matchesText(input, option?.label)
             }
             notFoundContent="No book found — type to search"
             options={[
@@ -297,10 +296,7 @@ export default function EntryForm({ onAddBook, newBook }) {
             showSearch
             optionFilterProp="label"
             filterOption={(input, option) =>
-              option?.value === "__new__" ||
-              String(option?.label || "")
-                .toLowerCase()
-                .includes(String(input).toLowerCase())
+              option?.value === "__new__" || matchesText(input, option?.label)
             }
             notFoundContent="Nothing found — use “Add” below to create it"
             options={[

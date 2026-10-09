@@ -8,6 +8,7 @@ import {
   StopOutlined,
 } from "@ant-design/icons";
 import Spinner from "@/components/Spinner";
+import { matchesText } from "@/lib/translit";
 
 export default function AdminReportPage() {
   const [data, setData] = useState(null);
@@ -26,9 +27,8 @@ export default function AdminReportPage() {
 
   const rows = useMemo(() => {
     if (!data) return [];
-    const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     return (data.rows || []).filter(
-      (r) => rx.test(r?.name || "") || rx.test(r?.email || "") || rx.test(r?.mobile || "")
+      (r) => matchesText(q, r?.name) || matchesText(q, r?.email) || matchesText(q, r?.mobile)
     );
   }, [data, q]);
 
