@@ -49,7 +49,7 @@ export default function AdminSantsPage() {
     const json = await res.json();
     setPending(false);
     if (!res.ok) {
-      setMessage({ type: "error", text: json.error || "Failed to add" });
+      setMessage({ type: "error", text: json?.error || "Failed to add" });
       return;
     }
     setUsers((list) => [json, ...list]);
@@ -65,7 +65,7 @@ export default function AdminSantsPage() {
     });
     const json = await res.json();
     if (!res.ok) {
-      setMessage({ type: "error", text: json.error || "Update failed" });
+      setMessage({ type: "error", text: json?.error || "Update failed" });
       return;
     }
     setUsers((list) =>
@@ -95,7 +95,7 @@ export default function AdminSantsPage() {
       body: JSON.stringify({ password: passwordText }),
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Error");
+    if (!res.ok) throw new Error(json?.error || "Error");
     setMessage({ type: "ok", text: "Password changed ✓" });
   }
 
@@ -104,7 +104,7 @@ export default function AdminSantsPage() {
       method: "DELETE",
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Delete failed");
+    if (!res.ok) throw new Error(json?.error || "Delete failed");
     setUsers((list) => list.filter((u) => u.id !== deleteTarget.id));
   }
 

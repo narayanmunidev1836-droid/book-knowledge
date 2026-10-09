@@ -18,8 +18,8 @@ export default function AdminSettingsPage() {
       .then((d) => {
         if (d?.error) setError(d.error);
         else {
-          setSiteName(d.siteName || "");
-          setTagline(d.tagline || "");
+          setSiteName(d?.siteName || "");
+          setTagline(d?.tagline || "");
         }
       })
       .catch(() => setError("Failed to load settings"))
@@ -42,7 +42,7 @@ export default function AdminSettingsPage() {
         body: JSON.stringify({ siteName: siteName.trim(), tagline: tagline.trim() }),
       });
       const d = await res.json();
-      if (!res.ok) throw new Error(d.error || "Failed to save");
+      if (!res.ok) throw new Error(d?.error || "Failed to save");
       setSaved(true);
       setTimeout(() => window.location.reload(), 800);
     } catch (err) {

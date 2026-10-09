@@ -177,7 +177,7 @@ export default function EntryForm({ onAddBook, newBook }) {
     if (!res.ok) {
       // Already there (the API rejects duplicates) — just select it.
       const existing = topics.find(
-        (t) => t.name.trim().toLowerCase() === name.toLowerCase()
+        (t) => t?.name?.trim()?.toLowerCase() === name.toLowerCase()
       );
       if (existing) {
         setForm((f) => ({ ...f, topicIds: [...f.topicIds, existing._id] }));
@@ -185,7 +185,7 @@ export default function EntryForm({ onAddBook, newBook }) {
         setMessage({ type: "ok", text: `Topic "${existing.name}" selected` });
         return;
       }
-      setMessage({ type: "error", text: json.error || "Failed to add topic" });
+      setMessage({ type: "error", text: json?.error || "Failed to add topic" });
       return;
     }
     setTopics((t) => [...t, json].sort((a, b) => a.name.localeCompare(b.name)));
@@ -216,7 +216,7 @@ export default function EntryForm({ onAddBook, newBook }) {
     setPending(false);
 
     if (!res.ok) {
-      setMessage({ type: "error", text: json.error || "Upload failed" });
+      setMessage({ type: "error", text: json?.error || "Upload failed" });
       return;
     }
 

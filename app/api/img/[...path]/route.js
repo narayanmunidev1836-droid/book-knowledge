@@ -121,7 +121,7 @@ export async function GET(req, { params }) {
   const session = await auth();
   if (session?.user) {
     // A browser request carries the cookie → signature alone is not enough.
-    if (session.user.role !== "admin" && String(session.user.id) !== ownerId) {
+    if (session.user?.role !== "admin" && String(session.user?.id) !== ownerId) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
   } else if (v !== versionOf(doc.updatedAt)) {

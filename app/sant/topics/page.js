@@ -57,7 +57,7 @@ export default function SantTopicsPage() {
     });
     const json = await res.json();
     if (!res.ok) {
-      setMessage({ type: "error", text: json.error || "Failed to add" });
+      setMessage({ type: "error", text: json?.error || "Failed to add" });
       return;
     }
     setTopics((list) => [...list, json].sort(byCountThenName));
@@ -75,7 +75,7 @@ export default function SantTopicsPage() {
     });
     const json = await res.json();
     if (!res.ok) {
-      setMessage({ type: "error", text: json.error || "Update failed" });
+      setMessage({ type: "error", text: json?.error || "Update failed" });
       return;
     }
     setTopics((list) =>
@@ -90,7 +90,7 @@ export default function SantTopicsPage() {
       method: "DELETE",
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Delete failed");
+    if (!res.ok) throw new Error(json?.error || "Delete failed");
     setTopics((list) => list.filter((t) => t._id !== deleteTarget._id));
   }
 

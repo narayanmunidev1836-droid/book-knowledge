@@ -114,7 +114,7 @@ export default function EditBookModal({ book, onClose, onSaved }) {
       });
       const json = await res.json();
       if (!res.ok) {
-        setMessage({ type: "error", text: json.error || "Failed to save" });
+        setMessage({ type: "error", text: json?.error || "Failed to save" });
         return;
       }
       onSaved?.(json);

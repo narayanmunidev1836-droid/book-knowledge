@@ -14,14 +14,14 @@ const links = [
 export default async function SantLayout({ children }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (session.user.role === "admin") redirect("/admin");
+  if (session?.user?.role === "admin") redirect("/admin");
   const settings = await getSettings();
 
   return (
     <>
-      <Nav links={links} user={session.user} brandName={settings.siteName} />
+      <Nav links={links} user={session.user} brandName={settings?.siteName} />
       <div className="flex-1 lg:pl-64">
-        <main className="mx-auto w-full max-w-6xl px-4 py-6">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 pb-24 pt-6 lg:pb-6">{children}</main>
       </div>
     </>
   );

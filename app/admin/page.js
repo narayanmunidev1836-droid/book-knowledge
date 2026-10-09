@@ -96,7 +96,7 @@ export default function AdminDashboard() {
         <BarChart data={labels} />
         <div className="mt-2 flex justify-between text-[10px] text-slate-400">
           {labels.filter((d) => d?.show && d?.date).map((d) => (
-            <span key={d.date}>{d.date.slice(5)}</span>
+            <span key={d?.date}>{d.date?.slice(5)}</span>
           ))}
         </div>
       </div>

@@ -42,7 +42,7 @@ export default function ChangePasswordModal({ open, onClose }) {
         body: JSON.stringify({ currentPassword: current, newPassword: next }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Something went wrong");
+      if (!res.ok) throw new Error(data?.error || "Something went wrong");
       onClose();
     } catch (err) {
       setError(err?.message || "Something went wrong");

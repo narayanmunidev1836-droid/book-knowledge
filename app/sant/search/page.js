@@ -126,7 +126,7 @@ export default function SearchPage() {
       method: "DELETE",
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Delete failed");
+    if (!res.ok) throw new Error(json?.error || "Delete failed");
     setEntries((list) => list.filter((e) => e._id !== deleteTarget._id));
     setTotal((t) => Math.max(0, t - 1));
     if (selected && selected._id === deleteTarget._id) setSelected(null);
@@ -191,7 +191,7 @@ export default function SearchPage() {
       body: payload, // FormData — note, removeIndices and any new images
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Update failed");
+    if (!res.ok) throw new Error(json?.error || "Update failed");
     const count = json.imageCount || 0;
     const upd = {
       note: json.note,

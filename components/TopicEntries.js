@@ -103,7 +103,7 @@ export default function TopicEntries({ topicId }) {
       body: payload,
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Update failed");
+    if (!res.ok) throw new Error(json?.error || "Update failed");
     const count = json.imageCount || 0;
     const upd = {
       note: json.note,

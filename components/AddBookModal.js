@@ -87,7 +87,7 @@ export default function AddBookModal({ onClose, onCreated }) {
       const res = await fetch("/api/books", { method: "POST", body: data });
       const json = await res.json();
       if (!res.ok) {
-        setMessage({ type: "error", text: json.error || "Failed to add" });
+        setMessage({ type: "error", text: json?.error || "Failed to add" });
         return;
       }
       onCreated?.(json);

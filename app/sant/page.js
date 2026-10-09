@@ -79,7 +79,7 @@ export default function SantDashboard() {
       method: "DELETE",
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Delete failed");
+    if (!res.ok) throw new Error(json?.error || "Delete failed");
     setEntries((list) => list.filter((e) => e._id !== deleteTarget._id));
     refreshStats();
     loadRecent();
@@ -91,7 +91,7 @@ export default function SantDashboard() {
       body: payload, // FormData — note, removeIndices and any new images
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Update failed");
+    if (!res.ok) throw new Error(json?.error || "Update failed");
     setError("");
     const count = json.imageCount || 0;
     setEntries((list) =>
@@ -191,7 +191,7 @@ export default function SantDashboard() {
         <BarChart data={labels} />
         <div className="mt-2 flex justify-between text-[10px] text-slate-400">
           {labels.filter((d) => d?.show && d?.date).map((d) => (
-            <span key={d.date}>{d.date.slice(5)}</span>
+            <span key={d.date}>{d.date?.slice(5)}</span>
           ))}
         </div>
       </div>

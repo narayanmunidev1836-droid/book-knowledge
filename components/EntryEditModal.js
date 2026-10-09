@@ -50,9 +50,9 @@ export default function EntryEditModal({ open, entry, onClose, onSubmit }) {
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
-        const base = d.thumbs?.length
+        const base = d?.thumbs?.length
           ? d.thumbs
-          : d.thumb
+          : d?.thumb
             ? [d.thumb]
             : [];
         setThumbs(base.map((src, i) => ({ src, i })));

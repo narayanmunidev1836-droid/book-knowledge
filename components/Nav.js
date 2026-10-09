@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Drawer } from "antd";
 import {
-  MenuOutlined,
-  CloseOutlined,
+  EllipsisOutlined,
   BookOutlined,
   LogoutOutlined,
   UserOutlined,
@@ -115,16 +113,137 @@ function UserBlock({ user, onChangePassword }) {
   );
 }
 
-export default function Nav({ links, user, brandName }) {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const [pwdOpen, setPwdOpen] = useState(false);
+const TAB_WIDTH = 76; // min px per tab, incl. the More tab
+const DEFAULT_TABS = 4;
+
+function BottomBar({ links, pathname, user, onChangePassword }) {
+  const [moreOpen, setMoreOpen] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const [maxTabs, setMaxTabs] = useState(DEFAULT_TABS);
+  const ref = useRef(null);
+  const navRef = useRef(null);
+
+  // Show as many tabs as fit in the bar (one slot is reserved for More);
+  // the rest go into the More menu.
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const update = () =>
+      setMaxTabs(Math.max(1, Math.floor(el.clientWidth / TAB_WIDTH) - 1));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const tabs = links.slice(0, maxTabs);
+  const extra = links.slice(maxTabs);
 
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
-    if (open) setOpen(false);
+    if (moreOpen) setMoreOpen(false);
   }
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setMoreOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [moreOpen]);
+
+  const moreActive = extra.some((l) => isActivePath(pathname, l.href));
+  const tabClass = (active) =>
+    `flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition ${
+      active ? "text-emerald-600" : "text-slate-500"
+    }`;
+  const pill = (active) =>
+    `flex h-7 w-12 items-center justify-center rounded-full text-lg transition ${
+      active ? "bg-emerald-100" : ""
+    }`;
+
+  return (
+    <div ref={ref} className="lg:hidden">
+      {moreOpen && (
+        <div className="fixed bottom-[72px] right-3 z-50 w-60 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl shadow-slate-900/10">
+          {user?.name && (
+            <div className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-700">
+              <UserOutlined className="text-lg text-slate-500" />
+              <span className="truncate">{user.name}</span>
+            </div>
+          )}
+          {extra.map((link) => {
+            const active = isActivePath(pathname, link.href);
+            const Icon = ICONS[link.href];
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${
+                  active ? "bg-emerald-50 text-emerald-700" : "text-slate-700"
+                }`}
+              >
+                {Icon && <Icon className="text-lg text-emerald-600" />}
+                {link.label}
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => {
+              setMoreOpen(false);
+              onChangePassword();
+            }}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700"
+          >
+            <LockOutlined className="text-lg text-slate-500" /> Change password
+          </button>
+          <div className="my-1 border-t border-slate-100" />
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600"
+          >
+            <LogoutOutlined className="text-lg" /> Log out
+          </button>
+        </div>
+      )}
+
+      <nav
+        ref={navRef}
+        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-8px_rgba(15,23,42,0.15)] backdrop-blur-md"
+      >
+        {tabs.map((link) => {
+          const active = isActivePath(pathname, link.href);
+          const Icon = ICONS[link.href];
+          return (
+            <Link key={link.href} href={link.href} className={tabClass(active)}>
+              <span className={pill(active)}>{Icon && <Icon />}</span>
+              {link.label}
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-label="More"
+          aria-expanded={moreOpen}
+          className={tabClass(moreOpen || moreActive)}
+        >
+          <span className={pill(moreOpen || moreActive)}>
+            <EllipsisOutlined />
+          </span>
+          More
+        </button>
+      </nav>
+    </div>
+  );
+}
+
+export default function Nav({ links, user, brandName }) {
+  const pathname = usePathname();
+  const [pwdOpen, setPwdOpen] = useState(false);
 
   return (
     <>
@@ -137,63 +256,21 @@ export default function Nav({ links, user, brandName }) {
         <UserBlock user={user} onChangePassword={() => setPwdOpen(true)} />
       </aside>
 
-      {/* Mobile / tablet topbar with hamburger */}
+      {/* Mobile / tablet topbar */}
       <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-slate-200 bg-white/85 px-4 py-2.5 shadow-sm backdrop-blur-md lg:hidden">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-        >
-          <MenuOutlined className="text-lg" />
-        </button>
         <Brand name={brandName} />
-        <button
-          type="button"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          aria-label="Log out"
-          className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-50"
-        >
-          <LogoutOutlined />
-        </button>
+        <span className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+          <UserOutlined />
+        </span>
       </header>
 
-      {/* Mobile / tablet drawer sidebar */}
-      <Drawer
-        placement="left"
-        open={open}
-        onClose={() => setOpen(false)}
-        size={272}
-        closeIcon={false}
-        styles={{
-          header: { display: "none" },
-          body: {
-            padding: 0,
-            background: "#fff",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-          },
-        }}
-      >
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
-          <Brand name={brandName} />
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Close menu"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100"
-          >
-            <CloseOutlined />
-          </button>
-        </div>
-        <SidebarLinks
-          links={links}
-          pathname={pathname}
-          onNavigate={() => setOpen(false)}
-        />
-        <UserBlock user={user} onChangePassword={() => setPwdOpen(true)} />
-      </Drawer>
+      {/* Mobile / tablet bottom tab bar */}
+      <BottomBar
+        links={links}
+        pathname={pathname}
+        user={user}
+        onChangePassword={() => setPwdOpen(true)}
+      />
 
       <ChangePasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />
     </>

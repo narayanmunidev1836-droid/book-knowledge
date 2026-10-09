@@ -60,7 +60,7 @@ export default function BooksPage() {
       method: "DELETE",
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Delete failed");
+    if (!res.ok) throw new Error(json?.error || "Delete failed");
     setBooks((list) => list.filter((b) => b._id !== deleteTarget._id));
   }
 
