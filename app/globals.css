@@ -5,18 +5,32 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Orange / terracotta theme (matches rampuraswayamsevak) */
+  --color-emerald-50: #fff5f0;
+  --color-emerald-100: #fde8e0;
+  --color-emerald-200: #f0d0b8;
+  --color-emerald-300: #e8a888;
+  --color-emerald-400: #de7a4d;
+  --color-emerald-500: #c4511f;
+  --color-emerald-600: #b0451a;
+  --color-emerald-700: #8e351f;
+  --color-emerald-800: #6e2510;
+  --color-teal-400: #de7a4d;
+  --color-teal-500: #c4511f;
+  --color-teal-600: #8e1f0a;
 }
 
 :root {
-  --background: #f1f5f9;
+  --background: #fdfaf8;
   --foreground: #0f172a;
 }
 
 body {
   background: var(--background);
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.12), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(20, 184, 166, 0.08), transparent);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(196, 81, 31, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(142, 31, 10, 0.08), transparent);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
@@ -37,7 +51,7 @@ body {
 .card-hover:hover {
   box-shadow:
     0 2px 4px rgba(15, 23, 42, 0.06),
-    0 12px 32px -8px rgba(16, 185, 129, 0.18);
+    0 12px 32px -8px rgba(196, 81, 31, 0.18);
   transform: translateY(-2px);
 }
 
@@ -47,14 +61,14 @@ body {
   justify-content: center;
   gap: 0.5rem;
   border-radius: 0.75rem;
-  background: linear-gradient(135deg, #059669, #10b981);
+  background: linear-gradient(135deg, #8e1f0a, #c4511f);
   padding: 0.55rem 1.1rem;
   font-size: 0.875rem;
   font-weight: 600;
   color: #fff;
   box-shadow:
-    0 1px 2px rgba(5, 150, 105, 0.3),
-    0 6px 16px -6px rgba(16, 185, 129, 0.55);
+    0 1px 2px rgba(142, 31, 10, 0.3),
+    0 6px 16px -6px rgba(196, 81, 31, 0.55);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
@@ -65,8 +79,8 @@ body {
   filter: brightness(1.06);
   transform: translateY(-1px);
   box-shadow:
-    0 1px 2px rgba(5, 150, 105, 0.35),
-    0 10px 22px -6px rgba(16, 185, 129, 0.65);
+    0 1px 2px rgba(142, 31, 10, 0.35),
+    0 10px 22px -6px rgba(196, 81, 31, 0.65);
 }
 
 .btn-primary:active {
@@ -138,8 +152,8 @@ body {
 }
 
 .input:focus {
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  border-color: #c4511f;
+  box-shadow: 0 0 0 3px rgba(196, 81, 31, 0.15);
 }
 
 /* note / long text: break even when there are no spaces (e.g. continuous typing) */
@@ -156,12 +170,12 @@ textarea.input {
 }
 
 .select-input:not(.ant-select-disabled):hover {
-  --ant-select-border-color: #10b981 !important;
+  --ant-select-border-color: #c4511f !important;
 }
 
 .select-input.ant-select-focused {
-  --ant-select-border-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  --ant-select-border-color: #c4511f !important;
+  box-shadow: 0 0 0 3px rgba(196, 81, 31, 0.15) !important;
 }
 
 

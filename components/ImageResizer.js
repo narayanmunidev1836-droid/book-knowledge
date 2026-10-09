@@ -253,7 +253,7 @@ export default function ImageResizer({ open, src, fileName, onCancel, onConfirm,
                 preserveAspectRatio="none"
                 className="pointer-events-none absolute inset-0 h-full w-full"
               >
-                <polygon points={poly} fill="rgba(16,185,129,0.18)" stroke="#10b981" strokeWidth="0.6" />
+                <polygon points={poly} fill="rgba(196, 81, 31,0.18)" stroke="#c4511f" strokeWidth="0.6" />
               </svg>
               {corners.map((p, i) => (
                 <button

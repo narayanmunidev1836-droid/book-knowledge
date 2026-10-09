@@ -71,7 +71,7 @@ export default function ChangePasswordModal({ open, onClose }) {
       okButtonProps={{
         disabled: pending,
         style: {
-          background: "linear-gradient(135deg, #059669, #10b981)",
+          background: "linear-gradient(135deg, #8e1f0a, #c4511f)",
           borderColor: "transparent",
           borderRadius: "0.75rem",
           fontWeight: 600,
