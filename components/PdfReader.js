@@ -125,11 +125,23 @@ export default function PdfReader({ bookId }) {
           "pdfjs-dist/build/pdf.worker.min.mjs",
           import.meta.url
         ).toString();
-        doc = await pdfjs.getDocument({
-          url: `/api/books/${encodeURIComponent(bookId)}/pdf`,
-        }).promise;
+        // Fetch the bytes ourselves and verify them: handing pdf.js a URL lets
+        // its streaming/caching layer silently open a partial file as a
+        // 1-page document.
+        const res = await fetch(`/api/books/${encodeURIComponent(bookId)}/pdf`, {
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = new Uint8Array(await res.arrayBuffer());
+        const expected = Number(res.headers.get("content-length"));
+        if (expected && data.length !== expected) {
+          throw new Error(`Incomplete PDF: ${data.length}/${expected} bytes`);
+        }
+        if (cancelled) return;
+        doc = await pdfjs.getDocument({ data }).promise;
         if (!cancelled) setPdf(doc);
-      } catch {
+      } catch (e) {
+        console.error("PDF load failed:", e);
         if (!cancelled) setError("Could not open this PDF");
       }
     })();

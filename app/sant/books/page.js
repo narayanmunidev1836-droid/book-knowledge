@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Select } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -26,14 +27,18 @@ export default function BooksPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  const [pdfFilter, setPdfFilter] = useState("all");
+
   const term = search.trim().toLowerCase();
-  const filtered = term
-    ? books.filter((b) =>
-        [b.name, b.author, b.category, b.language]
-          .filter(Boolean)
-          .some((v) => matchesText(term, v))
-      )
-    : books;
+  const filtered = books.filter((b) => {
+    if (pdfFilter === "with" && !b.hasPdf) return false;
+    if (pdfFilter === "without" && b.hasPdf) return false;
+    if (!term) return true;
+    return [b.name, b.author, b.category, b.language]
+      .filter(Boolean)
+      .some((v) => matchesText(term, v));
+  });
+  const isFiltering = Boolean(term) || pdfFilter !== "all";
 
   useEffect(() => {
     fetch("/api/books")
@@ -74,7 +79,7 @@ export default function BooksPage() {
             Click a book to see all its records — {books.length} book
             {books.length === 1 ? "" : "s"},{" "}
             {books.reduce((n, b) => n + (b.entryCount || 0), 0)} records
-            {term ? `, showing ${filtered.length}` : ""}
+            {isFiltering ? `, showing ${filtered.length}` : ""}
           </p>
         </div>
         <button type="button" onClick={() => setShowAdd(true)} className="btn-primary">
@@ -82,13 +87,28 @@ export default function BooksPage() {
         </button>
       </div>
 
-      <div className="relative max-w-md fade-up" style={{ animationDelay: "0.06s" }}>
-        <SearchOutlined className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search books — name, author, category…"
-          className="input !pl-9"
+      <div
+        className="flex max-w-xl flex-wrap items-center gap-2 fade-up"
+        style={{ animationDelay: "0.06s" }}
+      >
+        <div className="relative min-w-0 flex-1 basis-56">
+          <SearchOutlined className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search books — name, author, category…"
+            className="input !pl-9"
+          />
+        </div>
+        <Select
+          value={pdfFilter}
+          onChange={setPdfFilter}
+          className="select-input w-40"
+          options={[
+            { value: "all", label: "All" },
+            { value: "with", label: "With PDF" },
+            { value: "without", label: "Without PDF" },
+          ]}
         />
       </div>
 
@@ -177,7 +197,9 @@ export default function BooksPage() {
             <div className="card col-span-full flex items-center gap-2 p-6 text-slate-500">
               <SearchOutlined className="text-emerald-400" />
               <p className="text-sm">
-                No books match “{search.trim()}” — try another word.
+                {term
+                  ? `No books match “${search.trim()}” — try another word.`
+                  : "No books match this filter."}
               </p>
             </div>
           )}
