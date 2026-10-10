@@ -8,6 +8,8 @@ import {
   StopOutlined,
 } from "@ant-design/icons";
 import Spinner from "@/components/Spinner";
+import Highlight from "@/components/Highlight";
+import DebouncedInput from "@/components/DebouncedInput";
 import { matchesText } from "@/lib/translit";
 
 export default function AdminReportPage() {
@@ -69,9 +71,9 @@ export default function AdminReportPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 fade-up">
-        <input
+        <DebouncedInput
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={setQ}
           placeholder="Search sant…"
           className="input max-w-xs"
         />
@@ -99,8 +101,12 @@ export default function AdminReportPage() {
             {rows.map((r) => (
               <tr key={r.id} className="border-b border-slate-100 transition hover:bg-emerald-50/40">
                 <td className="px-4 py-3">
-                  <p className="font-semibold text-slate-800">{r.name}</p>
-                  <p className="text-xs text-slate-400">{r.email || r.mobile}</p>
+                  <p className="font-semibold text-slate-800">
+                    <Highlight text={r.name} q={q} />
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    <Highlight text={r.email || r.mobile} q={q} />
+                  </p>
                 </td>
                 <td className="px-4 py-3">{r.books}</td>
                 <td className="px-4 py-3">{r.topics}</td>

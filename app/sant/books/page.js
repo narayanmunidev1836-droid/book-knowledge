@@ -16,6 +16,8 @@ import AddBookModal from "@/components/AddBookModal";
 import EditBookModal from "@/components/EditBookModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import Spinner from "@/components/Spinner";
+import Highlight from "@/components/Highlight";
+import DebouncedInput from "@/components/DebouncedInput";
 import { matchesText } from "@/lib/translit";
 
 export default function BooksPage() {
@@ -93,9 +95,9 @@ export default function BooksPage() {
       >
         <div className="relative min-w-0 flex-1 basis-56">
           <SearchOutlined className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
-          <input
+          <DebouncedInput
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={setSearch}
             placeholder="Search books — name, author, category…"
             className="input !pl-9"
           />
@@ -141,13 +143,18 @@ export default function BooksPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-slate-800">{book.name}</p>
+                  <p className="truncate font-semibold text-slate-800">
+                    <Highlight text={book.name} q={search} lead={20} />
+                  </p>
                   <p className="text-sm text-slate-500">
-                    {book.author || "No author"}
-                    {book.publisher ? ` · ${book.publisher}` : ""} · {book.language}
+                    {book.author ? <Highlight text={book.author} q={search} /> : "No author"}
+                    {book.publisher ? ` · ${book.publisher}` : ""} ·{" "}
+                    <Highlight text={book.language} q={search} />
                   </p>
                   {book.category && (
-                    <p className="text-xs font-medium text-emerald-600">{book.category}</p>
+                    <p className="text-xs font-medium text-emerald-600">
+                      <Highlight text={book.category} q={search} />
+                    </p>
                   )}
                   <span className="mt-1 inline-flex w-fit rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                     {book.entryCount || 0}{" "}

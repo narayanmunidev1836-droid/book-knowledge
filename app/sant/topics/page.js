@@ -13,6 +13,8 @@ import {
 } from "@ant-design/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import Spinner from "@/components/Spinner";
+import Highlight from "@/components/Highlight";
+import DebouncedInput from "@/components/DebouncedInput";
 import { matchesText } from "@/lib/translit";
 
 // Same order the API returns with ?sort=count: busiest topic first.
@@ -111,9 +113,9 @@ export default function SantTopicsPage() {
 
       <div className="relative max-w-md fade-up" style={{ animationDelay: "0.06s" }}>
         <SearchOutlined className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
-        <input
+        <DebouncedInput
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={setSearch}
           placeholder="Search topics…"
           className="input !pl-9"
         />
@@ -199,7 +201,7 @@ export default function SantTopicsPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-emerald-700">
-                      {topic.name}
+                      <Highlight text={topic.name} q={search} lead={20} />
                     </p>
                     <p className="text-xs font-medium text-slate-500">
                       {topic.entryCount || 0}{" "}

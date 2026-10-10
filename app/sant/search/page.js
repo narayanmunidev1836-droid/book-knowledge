@@ -21,6 +21,8 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import Spinner from "@/components/Spinner";
 import ConfirmModal from "@/components/ConfirmModal";
 import EntryEditModal from "@/components/EntryEditModal";
+import Highlight from "@/components/Highlight";
+import DebouncedInput from "@/components/DebouncedInput";
 import { matchesText } from "@/lib/translit";
 import {
   neighborsOf,
@@ -74,28 +76,31 @@ export default function SearchPage() {
     setError("");
   }
 
-  // Filter change always restarts from page 1 (debounced).
+  // Filter change always restarts from page 1. (q is already debounced by
+  // DebouncedInput.)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetch(`/api/entries?${paramsFor(1)}`)
-        .then((r) => r.json())
-        .then((data) => {
-          if (data && Array.isArray(data.items)) {
-            applyPage(data);
-          } else if (Array.isArray(data)) {
-            setEntries(data);
-            setTotal(data.length);
-            setPages(1);
-            setPage(1);
-            setError("");
-          } else {
-            setError(data?.error || "Search failed");
-          }
-        })
-        .catch(() => setError("Search failed"))
-        .finally(() => setLoading(false));
-    }, 300);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    fetch(`/api/entries?${paramsFor(1)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data && Array.isArray(data.items)) {
+          applyPage(data);
+        } else if (Array.isArray(data)) {
+          setEntries(data);
+          setTotal(data.length);
+          setPages(1);
+          setPage(1);
+          setError("");
+        } else {
+          setError(data?.error || "Search failed");
+        }
+      })
+      .catch(() => !cancelled && setError("Search failed"))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, topicId]);
 
@@ -237,10 +242,10 @@ export default function SearchPage() {
           <label className="label">Search text</label>
           <div className="relative">
             <SearchOutlined className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
-            <input
+            <DebouncedInput
               value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
+              onChange={(v) => {
+                setQ(v);
                 setLoading(true);
               }}
               placeholder="e.g. guru bhakti, VACHNAMRUT, page note…"
@@ -336,7 +341,7 @@ export default function SearchPage() {
                     <div className="min-w-0 flex-1">
                       {entry.title && (
                         <p className="line-clamp-2 break-words font-semibold text-slate-800">
-                          {entry.title}
+                          <Highlight text={entry.title} q={q} />
                         </p>
                       )}
                       <p
@@ -346,7 +351,7 @@ export default function SearchPage() {
                             : "font-semibold text-slate-800"
                         }`}
                       >
-                        {entry.bookName}
+                        <Highlight text={entry.bookName} q={q} />
                         {entry.page ? ` - ${entry.page}` : ""}
                         {entry.indexNo ? ` · idx ${entry.indexNo}` : ""}
                       </p>
@@ -356,13 +361,13 @@ export default function SearchPage() {
                             key={name}
                             className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
                           >
-                            {name}
+                            <Highlight text={name} q={q} />
                           </span>
                         ))}
                       </span>
                       {entry.note && (
                         <p className="mt-1 truncate text-sm italic text-slate-600">
-                          “{entry.note}”
+                          “<Highlight text={entry.note} q={q} lead={20} />”
                         </p>
                       )}
                     </div>
@@ -445,14 +450,16 @@ export default function SearchPage() {
                       <td className="px-4 py-2.5 text-slate-800">
                         <div className="max-w-[14rem]">
                           {entry.title && (
-                            <p className="truncate font-semibold">{entry.title}</p>
+                            <p className="truncate font-semibold">
+                              <Highlight text={entry.title} q={q} lead={20} />
+                            </p>
                           )}
                           <p
                             className={`truncate ${
                               entry.title ? "text-sm text-slate-500" : "font-semibold"
                             }`}
                           >
-                            {entry.bookName}
+                            <Highlight text={entry.bookName} q={q} lead={20} />
                           </p>
                         </div>
                       </td>
@@ -463,7 +470,7 @@ export default function SearchPage() {
                               key={name}
                               className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
                             >
-                              {name}
+                              <Highlight text={name} q={q} />
                             </span>
                           ))}
                         </span>
@@ -474,7 +481,11 @@ export default function SearchPage() {
                       </td>
                       <td className="px-4 py-2.5 text-slate-600 italic">
                         <div className="max-w-[18rem] truncate">
-                          {entry.note || "—"}
+                          {entry.note ? (
+                            <Highlight text={entry.note} q={q} lead={30} />
+                          ) : (
+                            "—"
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-slate-500">
@@ -620,7 +631,7 @@ export default function SearchPage() {
                   <span>
                     <span className="block text-xs text-slate-400">Title</span>
                     <span className="font-semibold text-slate-800">
-                      {selected.title}
+                      <Highlight text={selected.title} q={q} />
                     </span>
                   </span>
                 </p>
@@ -630,14 +641,16 @@ export default function SearchPage() {
                 <span>
                   <span className="block text-xs text-slate-400">Book</span>
                   <span className="font-semibold text-slate-800">
-                    {selected.bookName}
+                    <Highlight text={selected.bookName} q={q} />
                   </span>
                 </span>
               </p>
               {selected.note && (
                 <div className="rounded-xl border-l-4 border-emerald-400 bg-emerald-50/60 p-3">
                   <span className="block text-xs text-slate-400">Note</span>
-                  <p className="break-words text-slate-700 italic">“{selected.note}”</p>
+                  <p className="break-words text-slate-700 italic">
+                    “<Highlight text={selected.note} q={q} />”
+                  </p>
                 </div>
               )}
               <p className="flex items-start gap-2">
@@ -650,7 +663,7 @@ export default function SearchPage() {
                         key={name}
                         className="rounded bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700"
                       >
-                        {name}
+                        <Highlight text={name} q={q} />
                       </span>
                     ))}
                   </span>
@@ -671,7 +684,7 @@ export default function SearchPage() {
                 <span>
                   <span className="block text-xs text-slate-400">Uploaded by</span>
                   <span className="font-semibold text-slate-800">
-                    {selected.uploadedByName}
+                    <Highlight text={selected.uploadedByName} q={q} />
                   </span>
                 </span>
               </p>

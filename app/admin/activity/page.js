@@ -12,6 +12,8 @@ import {
   HistoryOutlined,
 } from "@ant-design/icons";
 import Spinner from "@/components/Spinner";
+import Highlight from "@/components/Highlight";
+import DebouncedInput from "@/components/DebouncedInput";
 
 const ACTIONS = [
   { value: "all", label: "All" },
@@ -136,9 +138,9 @@ export default function AdminActivityPage() {
             {a.label}
           </button>
         ))}
-        <input
+        <DebouncedInput
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={setQ}
           placeholder="Search name or detail…"
           className="input ml-auto max-w-xs !py-1.5 text-sm"
         />
@@ -159,13 +161,17 @@ export default function AdminActivityPage() {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline gap-x-2">
-                  <span className="font-semibold text-slate-800">{item.actorName}</span>
+                  <span className="font-semibold text-slate-800">
+                    <Highlight text={item.actorName} q={q} />
+                  </span>
                   <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
                     {item.action}
                   </span>
                 </div>
                 {item.detail && (
-                  <p className="truncate text-sm text-slate-600">{item.detail}</p>
+                  <p className="truncate text-sm text-slate-600">
+                    <Highlight text={item.detail} q={q} lead={30} />
+                  </p>
                 )}
               </div>
               <span className="shrink-0 text-xs text-slate-400">

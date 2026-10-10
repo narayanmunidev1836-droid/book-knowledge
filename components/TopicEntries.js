@@ -27,6 +27,8 @@ import {
   urlsOf,
   useProgressiveSrc,
 } from "@/lib/progressiveImg";
+import Highlight from "@/components/Highlight";
+import DebouncedInput from "@/components/DebouncedInput";
 import { matchesText } from "@/lib/translit";
 
 const topicNamesOf = (entry) =>
@@ -205,9 +207,9 @@ export default function TopicEntries({ topicId }) {
       {entries.length > 0 && (
         <div className="relative fade-up" style={{ animationDelay: "0.06s" }}>
           <SearchOutlined className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
-          <input
+          <DebouncedInput
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={setQ}
             placeholder="Search in these records — book, title, page, note…"
             className="input !pl-9"
           />
@@ -254,7 +256,7 @@ export default function TopicEntries({ topicId }) {
                 <div className="min-w-0 flex-1">
                   {entry.title && (
                     <p className="line-clamp-2 break-words font-semibold text-slate-800">
-                      {entry.title}
+                      <Highlight text={entry.title} q={q} />
                     </p>
                   )}
                   <p
@@ -264,9 +266,23 @@ export default function TopicEntries({ topicId }) {
                         : "font-semibold text-slate-800"
                     }`}
                   >
-                    {entry.bookName}
-                    {entry.page ? ` - ${entry.page}` : ""}
-                    {entry.indexNo ? ` · idx ${entry.indexNo}` : ""}
+                    <Highlight text={entry.bookName} q={q} />
+                    {entry.page ? (
+                      <>
+                        {" - "}
+                        <Highlight text={entry.page} q={q} />
+                      </>
+                    ) : (
+                      ""
+                    )}
+                    {entry.indexNo ? (
+                      <>
+                        {" · idx "}
+                        <Highlight text={entry.indexNo} q={q} />
+                      </>
+                    ) : (
+                      ""
+                    )}
                   </p>
                   <span className="mt-1 flex flex-wrap gap-1">
                     {topicNamesOf(entry).map((name) => (
@@ -274,13 +290,13 @@ export default function TopicEntries({ topicId }) {
                         key={name}
                         className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
                       >
-                        {name}
+                        <Highlight text={name} q={q} />
                       </span>
                     ))}
                   </span>
                   {entry.note && (
                     <p className="mt-1 truncate text-sm italic text-slate-600">
-                      “{entry.note}”
+                      “<Highlight text={entry.note} q={q} lead={20} />”
                     </p>
                   )}
                 </div>
@@ -360,14 +376,16 @@ export default function TopicEntries({ topicId }) {
                   <td className="px-4 py-2.5 text-slate-800">
                     <div className="max-w-[14rem]">
                       {entry.title && (
-                        <p className="truncate font-semibold">{entry.title}</p>
+                        <p className="truncate font-semibold">
+                          <Highlight text={entry.title} q={q} lead={20} />
+                        </p>
                       )}
                       <p
                         className={`truncate ${
                           entry.title ? "text-sm text-slate-500" : "font-semibold"
                         }`}
                       >
-                        {entry.bookName}
+                        <Highlight text={entry.bookName} q={q} lead={20} />
                       </p>
                     </div>
                   </td>
@@ -378,18 +396,29 @@ export default function TopicEntries({ topicId }) {
                           key={name}
                           className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
                         >
-                          {name}
+                          <Highlight text={name} q={q} />
                         </span>
                       ))}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 whitespace-nowrap">
-                    {entry.page || "—"}
-                    {entry.indexNo ? ` · idx ${entry.indexNo}` : ""}
+                    {entry.page ? <Highlight text={entry.page} q={q} /> : "—"}
+                    {entry.indexNo ? (
+                      <>
+                        {" · idx "}
+                        <Highlight text={entry.indexNo} q={q} />
+                      </>
+                    ) : (
+                      ""
+                    )}
                   </td>
                   <td className="px-4 py-2.5 text-slate-600 italic">
                     <div className="max-w-[16rem] truncate">
-                      {entry.note || "-"}
+                      {entry.note ? (
+                        <Highlight text={entry.note} q={q} lead={30} />
+                      ) : (
+                        "-"
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-2.5 whitespace-nowrap text-slate-500">
@@ -522,7 +551,7 @@ export default function TopicEntries({ topicId }) {
                   <span>
                     <span className="block text-xs text-slate-400">Title</span>
                     <span className="font-semibold text-slate-800">
-                      {selected.title}
+                      <Highlight text={selected.title} q={q} />
                     </span>
                   </span>
                 </p>
@@ -532,7 +561,7 @@ export default function TopicEntries({ topicId }) {
                 <span>
                   <span className="block text-xs text-slate-400">Book</span>
                   <span className="font-semibold text-slate-800">
-                    {selected.bookName}
+                    <Highlight text={selected.bookName} q={q} />
                   </span>
                 </span>
               </p>
@@ -546,7 +575,7 @@ export default function TopicEntries({ topicId }) {
                         key={name}
                         className="rounded bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700"
                       >
-                        {name}
+                        <Highlight text={name} q={q} />
                       </span>
                     ))}
                   </span>
@@ -557,15 +586,24 @@ export default function TopicEntries({ topicId }) {
                 <span>
                   <span className="block text-xs text-slate-400">Page / Index</span>
                   <span className="font-semibold text-slate-800">
-                    {selected.page || "—"}
-                    {selected.indexNo ? ` · ${selected.indexNo}` : ""}
+                    {selected.page ? <Highlight text={selected.page} q={q} /> : "—"}
+                    {selected.indexNo ? (
+                      <>
+                        {" · "}
+                        <Highlight text={selected.indexNo} q={q} />
+                      </>
+                    ) : (
+                      ""
+                    )}
                   </span>
                 </span>
               </p>
               {selected.note && (
                 <div className="rounded-xl border-l-4 border-emerald-400 bg-emerald-50/60 p-3">
                   <span className="block text-xs text-slate-400">Note</span>
-                  <p className="break-words text-slate-700 italic">“{selected.note}”</p>
+                  <p className="break-words text-slate-700 italic">
+                    “<Highlight text={selected.note} q={q} />”
+                  </p>
                 </div>
               )}
               <p className="flex items-center gap-2">
