@@ -16,9 +16,11 @@ import {
   InboxOutlined,
   SearchOutlined,
   HighlightOutlined,
+  FullscreenOutlined,
 } from "@ant-design/icons";
 import Spinner from "@/components/Spinner";
 import EntryEditModal from "@/components/EntryEditModal";
+import FullscreenViewer from "@/components/FullscreenViewer";
 import {
   neighborsOf,
   preload,
@@ -40,6 +42,7 @@ export default function TopicEntries({ topicId }) {
   const [editTarget, setEditTarget] = useState(null);
   const [fullImages, setFullImages] = useState([]);
   const [imgIdx, setImgIdx] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
     if (!topicId) return;
@@ -439,7 +442,10 @@ export default function TopicEntries({ topicId }) {
 
       <Modal
         open={!!selected}
-        onCancel={() => setSelected(null)}
+        onCancel={() => {
+          setSelected(null);
+          setFullscreen(false);
+        }}
         footer={null}
         width="min(1000px, 94vw)"
         centered
@@ -454,8 +460,18 @@ export default function TopicEntries({ topicId }) {
                   <img
                     src={displaySrc}
                     alt={`${selected.bookName} ${safeImgIdx + 1}`}
-                    className="max-h-[70vh] w-auto max-w-full rounded-xl object-contain"
+                    onClick={() => setFullscreen(true)}
+                    title="Click to view full screen"
+                    className="max-h-[70vh] w-auto max-w-full cursor-zoom-in rounded-xl object-contain"
                   />
+                  <button
+                    type="button"
+                    aria-label="View full screen"
+                    onClick={() => setFullscreen(true)}
+                    className="absolute top-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-emerald-600"
+                  >
+                    <FullscreenOutlined />
+                  </button>
                   {fullSrc && displaySrc !== fullSrc && (
                     <span
                       role="status"
@@ -583,6 +599,19 @@ export default function TopicEntries({ topicId }) {
           </div>
         )}
       </Modal>
+
+      <FullscreenViewer
+        open={fullscreen}
+        src={displaySrc}
+        alt={`${selected?.bookName || ""} ${safeImgIdx + 1}`}
+        index={safeImgIdx}
+        count={fullImages.length}
+        onPrev={() =>
+          setImgIdx((i) => (i - 1 + fullImages.length) % fullImages.length)
+        }
+        onNext={() => setImgIdx((i) => (i + 1) % fullImages.length)}
+        onClose={() => setFullscreen(false)}
+      />
 
       <EntryEditModal
         open={!!editTarget}
