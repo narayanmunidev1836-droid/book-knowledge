@@ -36,7 +36,7 @@ export default function BooksPage() {
     if (pdfFilter === "with" && !b.hasPdf) return false;
     if (pdfFilter === "without" && b.hasPdf) return false;
     if (!term) return true;
-    return [b.name, b.author, b.category, b.language]
+    return [b.name, b.author, b.publisher, b.category, b.language]
       .filter(Boolean)
       .some((v) => matchesText(term, v));
   });
@@ -98,7 +98,7 @@ export default function BooksPage() {
           <DebouncedInput
             value={search}
             onChange={setSearch}
-            placeholder="Search books — name, author, category…"
+            placeholder="Search books — name, author, publisher, category…"
             className="input !pl-9"
           />
         </div>
@@ -148,7 +148,15 @@ export default function BooksPage() {
                   </p>
                   <p className="text-sm text-slate-500">
                     {book.author ? <Highlight text={book.author} q={search} /> : "No author"}
-                    {book.publisher ? ` · ${book.publisher}` : ""} ·{" "}
+                    {book.publisher ? (
+                      <>
+                        {" · "}
+                        <Highlight text={book.publisher} q={search} />
+                      </>
+                    ) : (
+                      ""
+                    )}{" "}
+                    ·{" "}
                     <Highlight text={book.language} q={search} />
                   </p>
                   {book.category && (
