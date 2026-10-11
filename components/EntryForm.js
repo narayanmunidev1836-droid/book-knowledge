@@ -338,7 +338,6 @@ export default function EntryForm({ onAddBook, newBook }) {
             type="file"
             accept="image/*"
             multiple
-            capture="environment"
             onChange={handleImage}
             className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
           />
