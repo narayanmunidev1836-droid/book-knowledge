@@ -160,7 +160,7 @@ export default function EditBookModal({ book, onClose, onSaved }) {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="label">Book name *</label>
             <input
@@ -213,6 +213,7 @@ export default function EditBookModal({ book, onClose, onSaved }) {
             <input
               type="file"
               accept="image/*"
+              capture="environment"
               onChange={handleCover}
               className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
             />

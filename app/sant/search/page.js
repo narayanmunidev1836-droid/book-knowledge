@@ -303,7 +303,7 @@ export default function SearchPage() {
             }
           >
             {/* Mobile & tablet — book-style cards (same look as /sant/books) */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
               {entries.map((entry, i) => (
                 <div
                   key={entry._id}
@@ -366,7 +366,7 @@ export default function SearchPage() {
                         ))}
                       </span>
                       {entry.note && (
-                        <p className="mt-1 truncate text-sm italic text-slate-600">
+                        <p className="mt-1 truncate text-sm text-slate-800">
                           “<Highlight text={entry.note} q={q} lead={20} />”
                         </p>
                       )}
@@ -479,7 +479,7 @@ export default function SearchPage() {
                         {entry.page || "—"}
                         {entry.indexNo ? ` · idx ${entry.indexNo}` : ""}
                       </td>
-                      <td className="px-4 py-2.5 text-slate-600 italic">
+                      <td className="px-4 py-2.5 text-slate-800">
                         <div className="max-w-[18rem] truncate">
                           {entry.note ? (
                             <Highlight text={entry.note} q={q} lead={30} />
@@ -558,7 +558,7 @@ export default function SearchPage() {
         title={selected ? selected.bookName : ""}
       >
         {selected && (
-          <div className="grid gap-5 pt-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 pt-2 sm:grid-cols-2">
             <div className="relative flex min-h-[240px] items-center justify-center overflow-hidden rounded-xl bg-slate-100">
               {fullImages.length ? (
                 <div className="relative flex w-full items-center justify-center">
@@ -647,8 +647,8 @@ export default function SearchPage() {
               </p>
               {selected.note && (
                 <div className="rounded-xl border-l-4 border-emerald-400 bg-emerald-50/60 p-3">
-                  <span className="block text-xs text-slate-400">Note</span>
-                  <p className="break-words text-slate-700 italic">
+                  <span className="block text-xs text-slate-600">Note</span>
+                  <p className="break-words text-slate-900">
                     “<Highlight text={selected.note} q={q} />”
                   </p>
                 </div>

@@ -101,7 +101,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="card fade-up p-5" style={{ animationDelay: "0.3s" }}>
           <h2 className="mb-4 font-semibold text-slate-800">Top Books</h2>
           <RankList items={data.topBooks || []} color="sky" />

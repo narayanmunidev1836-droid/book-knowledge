@@ -237,7 +237,7 @@ export default function EntryForm({ onAddBook, newBook }) {
       onSubmit={handleSubmit}
       className="card space-y-4 p-5 shadow-sm sm:p-6"
     >
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Book *</label>
           <Select
@@ -338,6 +338,7 @@ export default function EntryForm({ onAddBook, newBook }) {
             type="file"
             accept="image/*"
             multiple
+            capture="environment"
             onChange={handleImage}
             className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
           />

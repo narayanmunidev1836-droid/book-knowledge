@@ -259,6 +259,7 @@ export default function EntryEditModal({ open, entry, onClose, onSubmit }) {
               type="file"
               accept="image/*"
               multiple
+              capture="environment"
               disabled={room <= 0 || pending}
               onChange={handleAdd}
               className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700 disabled:opacity-60"

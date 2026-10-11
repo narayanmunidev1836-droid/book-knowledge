@@ -151,7 +151,7 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
                   </span>
                 </p>
                 {!compact && entry.note && (
-                  <p className="mt-1 truncate text-sm text-slate-600 italic">
+                  <p className="mt-1 truncate text-sm text-slate-800">
                     “{entry.note}”
                   </p>
                 )}
@@ -322,7 +322,7 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
                 </p>
 
                 {activeEntry.note && (
-                  <p className="mt-2 line-clamp-2 max-w-2xl break-words border-l-2 border-emerald-400/70 pl-3 text-sm italic leading-relaxed text-slate-200">
+                  <p className="mt-2 line-clamp-2 max-w-2xl break-words border-l-2 border-emerald-400/70 pl-3 text-sm leading-relaxed text-slate-200">
                     “{activeEntry.note}”
                   </p>
                 )}

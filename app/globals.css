@@ -26,6 +26,13 @@
   --foreground: #0f172a;
 }
 
+/* Never render italic / slanted text (it distorts Gujarati glyphs) */
+*,
+*::before,
+*::after {
+  font-style: normal !important;
+}
+
 body {
   background: var(--background);
   background-image:

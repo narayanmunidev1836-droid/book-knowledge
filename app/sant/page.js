@@ -196,7 +196,7 @@ export default function SantDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="card fade-up p-5" style={{ animationDelay: "0.3s" }}>
           <div className="mb-4 flex items-baseline justify-between gap-2">
             <h2 className="font-semibold text-slate-800">Top Books</h2>
