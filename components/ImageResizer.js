@@ -43,11 +43,21 @@ function drawTriangle(ctx, img, s, d) {
   const den = x0 * (y2 - y1) + x1 * (y0 - y2) + x2 * (y1 - y0);
   if (!den || Math.abs(den) < 1e-6) return;
 
+  // Clip a hair outside the triangle: two exactly-abutting anti-aliased clips
+  // leave a faint see-through seam along the shared diagonal.
+  const cx = (X0 + X1 + X2) / 3;
+  const cy = (Y0 + Y1 + Y2) / 3;
+  const grow = ([X, Y]) => {
+    const len = Math.hypot(X - cx, Y - cy) || 1;
+    return [X + ((X - cx) / len) * 1.5, Y + ((Y - cy) / len) * 1.5];
+  };
+  const [g0, g1, g2] = [[X0, Y0], [X1, Y1], [X2, Y2]].map(grow);
+
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(X0, Y0);
-  ctx.lineTo(X1, Y1);
-  ctx.lineTo(X2, Y2);
+  ctx.moveTo(g0[0], g0[1]);
+  ctx.lineTo(g1[0], g1[1]);
+  ctx.lineTo(g2[0], g2[1]);
   ctx.closePath();
   ctx.clip();
 
@@ -73,14 +83,26 @@ async function cropTo(src, corners, outW, outH, ow, oh, fileName) {
   ctx.imageSmoothingQuality = "high";
 
   const s = corners.map((p) => [p.x * ow, p.y * oh]);
-  const d = [
-    [0, 0],
-    [canvas.width, 0],
-    [canvas.width, canvas.height],
-    [0, canvas.height],
-  ];
-  drawTriangle(ctx, img, [s[0], s[1], s[2]], [d[0], d[1], d[2]]);
-  drawTriangle(ctx, img, [s[0], s[2], s[3]], [d[0], d[2], d[3]]);
+  const axisAligned =
+    s[0][1] === s[1][1] && s[3][1] === s[2][1] &&
+    s[0][0] === s[3][0] && s[1][0] === s[2][0];
+  if (axisAligned) {
+    // Plain rectangle: one direct draw, no triangle seam at all.
+    ctx.drawImage(
+      img,
+      s[0][0], s[0][1], s[1][0] - s[0][0], s[3][1] - s[0][1],
+      0, 0, canvas.width, canvas.height
+    );
+  } else {
+    const d = [
+      [0, 0],
+      [canvas.width, 0],
+      [canvas.width, canvas.height],
+      [0, canvas.height],
+    ];
+    drawTriangle(ctx, img, [s[0], s[1], s[2]], [d[0], d[1], d[2]]);
+    drawTriangle(ctx, img, [s[0], s[2], s[3]], [d[0], d[2], d[3]]);
+  }
 
   const blob = await new Promise((resolve) =>
     canvas.toBlob(resolve, "image/webp", 0.92)

@@ -1,24 +1,26 @@
 "use client";
 
 import { useRef } from "react";
-import { PictureOutlined, CameraOutlined } from "@ant-design/icons";
+import { CameraOutlined, PictureOutlined } from "@ant-design/icons";
 
-// "Choose from Gallery" everywhere, plus "Take Photo" on mobile only
-// (a bare `capture` input would force the camera and hide the gallery).
+// Mouse devices: the plain file input (gallery / files).
+// Touch devices (phone + tablet): a big camera box and a small gallery icon.
+// A bare `capture` input would force the camera and hide the gallery, so each
+// source gets its own input.
 export default function ImagePickButtons({ onChange, multiple = false }) {
-  const galleryRef = useRef(null);
   const cameraRef = useRef(null);
+  const galleryRef = useRef(null);
 
   return (
     <>
       <input
-        ref={galleryRef}
         type="file"
         accept="image/*"
         multiple={multiple}
         onChange={onChange}
-        className="hidden"
+        className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700 pointer-coarse:hidden"
       />
+
       <input
         ref={cameraRef}
         type="file"
@@ -27,23 +29,32 @@ export default function ImagePickButtons({ onChange, multiple = false }) {
         onChange={onChange}
         className="hidden"
       />
-      <div className="flex flex-wrap gap-2">
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        multiple={multiple}
+        onChange={onChange}
+        className="hidden"
+      />
+      <div className="hidden items-stretch gap-2 pointer-coarse:flex">
         <button
           type="button"
-          onClick={() => galleryRef.current?.click()}
-          className="btn-ghost !py-2 text-sm"
+          onClick={() => cameraRef.current?.click()}
+          className="btn-ghost flex-1 !border-emerald-300 !bg-emerald-50 !py-2 !text-sm !font-semibold !text-emerald-700"
         >
-          <PictureOutlined /> Choose from Gallery
+          <CameraOutlined className="!text-xl" />
+          Take Photo
         </button>
-        <div className="md:hidden">
-          <button
-            type="button"
-            onClick={() => cameraRef.current?.click()}
-            className="btn-ghost !py-2 text-sm"
-          >
-            <CameraOutlined /> Take Photo
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label="Choose from gallery"
+          title="Gallery"
+          onClick={() => galleryRef.current?.click()}
+          className="btn-ghost !px-4 !text-xl !text-slate-600"
+        >
+          <PictureOutlined />
+        </button>
       </div>
     </>
   );

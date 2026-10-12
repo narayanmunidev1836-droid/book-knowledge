@@ -2,26 +2,23 @@
 
 import { matchesText } from "@/lib/translit";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Select } from "antd";
 import {
   SaveOutlined,
   Loading3QuartersOutlined,
-  PictureOutlined,
-  CameraOutlined,
   ExpandOutlined,
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
 import ImageResizer from "@/components/ImageResizer";
+import ImagePickButtons from "@/components/ImagePickButtons";
 import AutoTextarea from "@/components/AutoTextarea";
 
 export default function EntryForm({ onAddBook, newBook }) {
   const router = useRouter();
-  const galleryRef = useRef(null);
-  const cameraRef = useRef(null);
   const [books, setBooks] = useState([]);
   const [topics, setTopics] = useState([]);
   const [form, setForm] = useState({
@@ -92,26 +89,13 @@ export default function EntryForm({ onAddBook, newBook }) {
     }
     if (!files.length) return;
 
-    const optimized = [];
-    let optimizedAny = false;
-    for (const f of files) {
-      const out = await compressForUpload(f);
-      if (out !== f) optimizedAny = true;
-      optimized.push(out);
-    }
+    // Keep the untouched original: the crop / scan step works from the full
+    // camera photo. Size is only trimmed at save time (see handleSubmit), so
+    // the picture never goes through a lossy re-encode before the scan clean-up.
     const start = images.length;
-    setImages((list) => [...list, ...optimized]);
-    setPreviews((list) => [
-      ...list,
-      ...optimized.map((f) => URL.createObjectURL(f)),
-    ]);
-    setCropQueue((q) => [...q, ...optimized.map((_, i) => start + i)]);
-    if (optimizedAny) {
-      setMessage({
-        type: "ok",
-        text: "Large photos optimized for upload (clarity preserved)",
-      });
-    }
+    setImages((list) => [...list, ...files]);
+    setPreviews((list) => [...list, ...files.map((f) => URL.createObjectURL(f))]);
+    setCropQueue((q) => [...q, ...files.map((_, i) => start + i)]);
   }
 
   function removeImageAt(i) {
@@ -212,7 +196,8 @@ export default function EntryForm({ onAddBook, newBook }) {
     data.append("indexNo", form.indexNo);
     data.append("note", form.note);
     data.append("title", form.title);
-    images.forEach((file) => data.append("image", file));
+    // Only photos still over the upload limit (never cropped / scanned) shrink here.
+    for (const file of images) data.append("image", await compressForUpload(file));
 
     const res = await fetch("/api/entries", { method: "POST", body: data });
     const json = await res.json();
@@ -337,41 +322,7 @@ export default function EntryForm({ onAddBook, newBook }) {
 
         <div>
           <label className="label">Images (optional)</label>
-          {/* Two hidden inputs: gallery picker, and camera (capture) for mobile. */}
-          <input
-            ref={galleryRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImage}
-            className="hidden"
-          />
-          <input
-            ref={cameraRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleImage}
-            className="hidden"
-          />
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => galleryRef.current?.click()}
-              className="btn-ghost !py-2 text-sm"
-            >
-              <PictureOutlined /> Choose from Gallery
-            </button>
-            <div className="md:hidden">
-              <button
-                type="button"
-                onClick={() => cameraRef.current?.click()}
-                className="btn-ghost !py-2 text-sm"
-              >
-                <CameraOutlined /> Take Photo
-              </button>
-            </div>
-          </div>
+          <ImagePickButtons onChange={handleImage} multiple />
           <p className="mt-1 text-xs text-slate-500">Up to 10 photos</p>
         </div>
       </div>

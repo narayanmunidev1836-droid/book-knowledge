@@ -15,6 +15,61 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 import { neighborsOf, preload, urlsOf, useProgressiveSrc } from "@/lib/progressiveImg";
+import { useSwipe } from "@/lib/useSwipe";
+
+// Topics / page / book / uploader / note of the open photo.
+function LightboxInfo({ entry }) {
+  return (
+    <>
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        {(entry.topicNames?.length ? entry.topicNames : [entry.topicName]).map(
+          (name) => (
+            <span
+              key={name}
+              className="rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-400/40 backdrop-blur"
+            >
+              {name}
+            </span>
+          )
+        )}
+        {entry.page != null && entry.page !== "" && (
+          <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/90 ring-1 ring-white/20 backdrop-blur">
+            Page {entry.page}
+          </span>
+        )}
+        {entry.indexNo != null && entry.indexNo !== "" && (
+          <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/90 ring-1 ring-white/20 backdrop-blur">
+            Idx {entry.indexNo}
+          </span>
+        )}
+      </div>
+
+      <h3 className="flex items-center gap-2 truncate text-lg font-bold text-white sm:text-xl">
+        <BookOutlined className="shrink-0 text-emerald-400" />
+        {entry.bookName}
+      </h3>
+
+      <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300">
+        <span className="flex items-center gap-1.5">
+          <UserOutlined className="text-slate-400" />
+          {entry.uploadedByName}
+        </span>
+        {entry.createdAt && (
+          <span className="flex items-center gap-1.5">
+            <CalendarOutlined className="text-slate-400" />
+            {new Date(entry.createdAt).toLocaleDateString("en-IN")}
+          </span>
+        )}
+      </p>
+
+      {entry.note && (
+        <p className="mt-2 line-clamp-2 max-w-2xl break-words border-l-2 border-emerald-400/70 pl-3 text-sm leading-relaxed text-slate-200">
+          “{entry.note}”
+        </p>
+      )}
+    </>
+  );
+}
 
 export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = false }) {
   const [active, setActive] = useState(null); // index into slides
@@ -66,6 +121,14 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
       : null;
   const fullSrc = idx >= 0 && activeEntry ? activeEntry.images?.[idx] || null : null;
   const activeSrc = useProgressiveSrc(fullSrc, thumbSrc);
+  const goPrev = () =>
+    setActive((i) => (i - 1 + slides.length) % slides.length);
+  const goNext = () => setActive((i) => (i + 1) % slides.length);
+  const swipe = useSwipe({
+    onPrev: goPrev,
+    onNext: goNext,
+    enabled: entries.length > 1,
+  });
 
   if (!entries.length) {
     return (
@@ -208,15 +271,31 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
           }}
         >
           <div className="fade-up relative mx-auto w-fit overflow-hidden rounded-2xl">
-            {/* Image — thumb first (instant), full swaps in when decoded */}
-            <div className="relative flex items-center justify-center">
+            {/* Touch devices: close sits in a bar above the photo */}
+            <div className="hidden justify-end bg-black/70 px-3 py-2 pointer-coarse:flex">
+              <button
+                type="button"
+                onClick={close}
+                aria-label="Close"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-base text-white active:bg-red-500/80"
+              >
+                <CloseOutlined />
+              </button>
+            </div>
+
+            {/* Image — thumb first (instant), full swaps in when decoded.
+                On touch devices a finger swipe changes the photo. */}
+            <div
+              {...swipe}
+              className="relative flex items-center justify-center"
+            >
               {activeSrc ? (
                 <Image
                   src={activeSrc}
                   alt={activeEntry.bookName}
                   width={1600}
                   height={1200}
-                  className="max-h-[76vh] h-auto w-auto max-w-full object-contain"
+                  className="max-h-[76vh] h-auto w-auto max-w-full object-contain pointer-coarse:max-h-[56vh]"
                 />
               ) : (
                 <div className="flex h-[50vh] w-[70vw] max-w-4xl items-center justify-center rounded-xl bg-black/40">
@@ -235,98 +314,75 @@ export default function GalleryGrid({ entries = [], onDelete, onEdit, compact = 
               )}
             </div>
 
-            {/* Counter */}
-            <span className="absolute top-4 left-4 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold tracking-wide text-white/90 backdrop-blur ring-1 ring-white/15">
-              {active + 1} / {slides.length}
-            </span>
+            {/* Mouse devices: counter, close, arrows and info float over the photo */}
+            <div className="pointer-coarse:hidden">
+              <span className="absolute top-4 left-4 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold tracking-wide text-white/90 backdrop-blur ring-1 ring-white/15">
+                {active + 1} / {slides.length}
+              </span>
 
-            {/* Close */}
-            <button
-              type="button"
-              onClick={close}
-              aria-label="Close"
-              className="absolute top-3.5 right-3.5 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-base text-white backdrop-blur ring-1 ring-white/15 transition duration-200 hover:rotate-90 hover:bg-red-500/80 hover:ring-red-400/50"
-            >
-              <CloseOutlined />
-            </button>
+              <button
+                type="button"
+                onClick={close}
+                aria-label="Close"
+                className="absolute top-3.5 right-3.5 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-base text-white backdrop-blur ring-1 ring-white/15 transition duration-200 hover:rotate-90 hover:bg-red-500/80 hover:ring-red-400/50"
+              >
+                <CloseOutlined />
+              </button>
 
-            {/* Arrows */}
+              {entries.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous image"
+                    onClick={goPrev}
+                    className="absolute top-1/2 left-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-lg text-white backdrop-blur ring-1 ring-white/20 transition duration-200 hover:scale-110 hover:bg-emerald-500 hover:ring-emerald-300 sm:left-5"
+                  >
+                    <LeftOutlined />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next image"
+                    onClick={goNext}
+                    className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-lg text-white backdrop-blur ring-1 ring-white/20 transition duration-200 hover:scale-110 hover:bg-emerald-500 hover:ring-emerald-300 sm:right-5"
+                  >
+                    <RightOutlined />
+                  </button>
+                </>
+              )}
+
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-5 pt-24 pb-5 sm:px-7 sm:pb-6">
+                <div className="pointer-events-auto">
+                  <LightboxInfo entry={activeEntry} />
+                </div>
+              </div>
+            </div>
+
+            {/* Touch devices (phone + tablet): prev / next and info sit under the photo */}
             {entries.length > 1 && (
-              <>
+              <div className="hidden items-center justify-center gap-3 bg-black/70 px-3 py-2 pointer-coarse:flex">
                 <button
                   type="button"
                   aria-label="Previous image"
-                  onClick={() =>
-                    setActive((i) => (i - 1 + slides.length) % slides.length)
-                  }
-                  className="absolute top-1/2 left-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-lg text-white backdrop-blur ring-1 ring-white/20 transition duration-200 hover:scale-110 hover:bg-emerald-500 hover:ring-emerald-300 sm:left-5"
+                  onClick={goPrev}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-base text-white active:bg-emerald-500"
                 >
                   <LeftOutlined />
                 </button>
+                <span className="min-w-14 text-center text-sm font-semibold text-white/90">
+                  {active + 1} / {slides.length}
+                </span>
                 <button
                   type="button"
                   aria-label="Next image"
-                  onClick={() => setActive((i) => (i + 1) % slides.length)}
-                  className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-lg text-white backdrop-blur ring-1 ring-white/20 transition duration-200 hover:scale-110 hover:bg-emerald-500 hover:ring-emerald-300 sm:right-5"
+                  onClick={goNext}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-base text-white active:bg-emerald-500"
                 >
                   <RightOutlined />
                 </button>
-              </>
-            )}
-
-            {/* Bottom gradient info */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-5 pt-24 pb-5 sm:px-7 sm:pb-6">
-              <div className="pointer-events-auto">
-                <div className="mb-2 flex flex-wrap gap-1.5">
-                  {(activeEntry.topicNames?.length
-                    ? activeEntry.topicNames
-                    : [activeEntry.topicName]
-                  ).map((name) => (
-                    <span
-                      key={name}
-                      className="rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-400/40 backdrop-blur"
-                    >
-                      {name}
-                    </span>
-                  ))}
-                  {activeEntry.page != null && activeEntry.page !== "" && (
-                    <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/90 ring-1 ring-white/20 backdrop-blur">
-                      Page {activeEntry.page}
-                    </span>
-                  )}
-                  {activeEntry.indexNo != null && activeEntry.indexNo !== "" && (
-                    <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white/90 ring-1 ring-white/20 backdrop-blur">
-                      Idx {activeEntry.indexNo}
-                    </span>
-                  )}
-                </div>
-
-                <h3 className="flex items-center gap-2 truncate text-lg font-bold text-white sm:text-xl">
-                  <BookOutlined className="shrink-0 text-emerald-400" />
-                  {activeEntry.bookName}
-                </h3>
-
-                <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300">
-                  <span className="flex items-center gap-1.5">
-                    <UserOutlined className="text-slate-400" />
-                    {activeEntry.uploadedByName}
-                  </span>
-                  {activeEntry.createdAt && (
-                    <span className="flex items-center gap-1.5">
-                      <CalendarOutlined className="text-slate-400" />
-                      {new Date(activeEntry.createdAt).toLocaleDateString(
-                        "en-IN"
-                      )}
-                    </span>
-                  )}
-                </p>
-
-                {activeEntry.note && (
-                  <p className="mt-2 line-clamp-2 max-w-2xl break-words border-l-2 border-emerald-400/70 pl-3 text-sm leading-relaxed text-slate-200">
-                    “{activeEntry.note}”
-                  </p>
-                )}
               </div>
+            )}
+            <div className="hidden bg-black/70 px-4 pt-1 pb-4 pointer-coarse:block">
+              <LightboxInfo entry={activeEntry} />
             </div>
           </div>
         </Modal>

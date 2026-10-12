@@ -13,8 +13,6 @@ import {
   UserOutlined,
   CalendarOutlined,
   PictureOutlined,
-  FullscreenOutlined,
-  CloseOutlined,
 } from "@ant-design/icons";
 import { Select, Modal } from "antd";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -23,6 +21,9 @@ import ConfirmModal from "@/components/ConfirmModal";
 import EntryEditModal from "@/components/EntryEditModal";
 import Highlight from "@/components/Highlight";
 import DebouncedInput from "@/components/DebouncedInput";
+import FullscreenViewer from "@/components/FullscreenViewer";
+import ModalImageBar, { ModalImageOverlay } from "@/components/ModalImageBar";
+import { useSwipe } from "@/lib/useSwipe";
 import { matchesText } from "@/lib/translit";
 import {
   neighborsOf,
@@ -227,6 +228,14 @@ export default function SearchPage() {
     (safeImgIdx === 0 ? selected?.image : null) ||
     null;
   const displaySrc = useProgressiveSrc(fullSrc, thumbSrc);
+  const goPrev = () =>
+    setImgIdx((i) => (i - 1 + fullImages.length) % fullImages.length);
+  const goNext = () => setImgIdx((i) => (i + 1) % fullImages.length);
+  const swipe = useSwipe({
+    onPrev: goPrev,
+    onNext: goNext,
+    enabled: fullImages.length > 1,
+  });
 
   return (
     <div className="space-y-5">
@@ -559,63 +568,39 @@ export default function SearchPage() {
       >
         {selected && (
           <div className="grid grid-cols-1 gap-5 pt-2 sm:grid-cols-2">
-            <div className="relative flex min-h-[240px] items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+            <div className="flex min-h-[240px] flex-col items-center justify-center overflow-hidden rounded-xl bg-slate-100">
               {fullImages.length ? (
-                <div className="relative flex w-full items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={displaySrc}
-                    alt={`${selected.bookName} ${safeImgIdx + 1}`}
-                    onClick={() => setFullscreen(true)}
-                    title="Click to view full screen"
-                    className="max-h-[70vh] w-auto max-w-full cursor-zoom-in rounded-xl object-contain"
-                  />
-                  <button
-                    type="button"
-                    aria-label="View full screen"
-                    onClick={() => setFullscreen(true)}
-                    className="absolute top-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-emerald-600"
+                <>
+                  <div
+                    {...swipe}
+                    className="relative flex w-full items-center justify-center"
                   >
-                    <FullscreenOutlined />
-                  </button>
-                  {fullSrc && displaySrc !== fullSrc && (
-                    <span
-                      role="status"
-                      aria-label="Loading full image"
-                      className="absolute right-3 bottom-3 h-5 w-5 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent"
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={displaySrc}
+                      alt={`${selected.bookName} ${safeImgIdx + 1}`}
+                      onClick={() => setFullscreen(true)}
+                      title="Click to view full screen"
+                      className="max-h-[70vh] w-auto max-w-full cursor-zoom-in rounded-xl object-contain"
                     />
-                  )}
-                  {fullImages.length > 1 && (
-                    <>
-                      <button
-                        type="button"
-                        aria-label="Previous photo"
-                        onClick={() =>
-                          setImgIdx(
-                            (i) =>
-                              (i - 1 + fullImages.length) % fullImages.length
-                          )
-                        }
-                        className="absolute left-2 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-lg text-white backdrop-blur transition hover:bg-emerald-600"
-                      >
-                        ‹
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Next photo"
-                        onClick={() =>
-                          setImgIdx((i) => (i + 1) % fullImages.length)
-                        }
-                        className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-lg text-white backdrop-blur transition hover:bg-emerald-600"
-                      >
-                        ›
-                      </button>
-                      <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                        {safeImgIdx + 1} / {fullImages.length}
-                      </span>
-                    </>
-                  )}
-                </div>
+                    <ModalImageOverlay
+                      index={safeImgIdx}
+                      count={fullImages.length}
+                      loading={!!fullSrc && displaySrc !== fullSrc}
+                      onPrev={goPrev}
+                      onNext={goNext}
+                      onFullscreen={() => setFullscreen(true)}
+                    />
+                  </div>
+                  <ModalImageBar
+                    index={safeImgIdx}
+                    count={fullImages.length}
+                    loading={!!fullSrc && displaySrc !== fullSrc}
+                    onPrev={goPrev}
+                    onNext={goNext}
+                    onFullscreen={() => setFullscreen(true)}
+                  />
+                </>
               ) : (
                 <span className="flex flex-col items-center gap-2 py-10 text-sm text-slate-400">
                   <PictureOutlined className="text-3xl text-slate-300" />
@@ -711,57 +696,16 @@ export default function SearchPage() {
         )}
       </Modal>
 
-      {fullscreen && fullSrc && (
-        <div
-          className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/95"
-          onClick={() => setFullscreen(false)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={displaySrc}
-            alt={`${selected?.bookName || ""} ${safeImgIdx + 1}`}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-screen max-w-full object-contain"
-          />
-          <button
-            type="button"
-            aria-label="Close full screen"
-            onClick={() => setFullscreen(false)}
-            className="absolute top-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-xl text-white backdrop-blur transition hover:bg-emerald-600"
-          >
-            <CloseOutlined />
-          </button>
-          {fullImages.length > 1 && (
-            <>
-              <button
-                type="button"
-                aria-label="Previous photo"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setImgIdx((i) => (i - 1 + fullImages.length) % fullImages.length);
-                }}
-                className="absolute left-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-2xl text-white backdrop-blur transition hover:bg-emerald-600"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                aria-label="Next photo"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setImgIdx((i) => (i + 1) % fullImages.length);
-                }}
-                className="absolute right-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-2xl text-white backdrop-blur transition hover:bg-emerald-600"
-              >
-                ›
-              </button>
-              <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                {safeImgIdx + 1} / {fullImages.length}
-              </span>
-            </>
-          )}
-        </div>
-      )}
+      <FullscreenViewer
+        open={fullscreen}
+        src={displaySrc}
+        alt={`${selected?.bookName || ""} ${safeImgIdx + 1}`}
+        index={safeImgIdx}
+        count={fullImages.length}
+        onPrev={goPrev}
+        onNext={goNext}
+        onClose={() => setFullscreen(false)}
+      />
 
       <ConfirmModal
         open={!!deleteTarget}
