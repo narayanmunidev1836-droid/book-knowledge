@@ -11,6 +11,7 @@ import {
 } from "@ant-design/icons";
 import { compressForUpload } from "@/lib/clientCompress";
 import ImageResizer from "@/components/ImageResizer";
+import ImagePickButtons from "@/components/ImagePickButtons";
 
 const LANGUAGES = ["Gujarati", "Hindi", "English", "Sanskrit"];
 
@@ -180,13 +181,7 @@ export default function AddBookModal({ onClose, onCreated }) {
           </div>
           <div>
             <label className="label">Cover image (optional)</label>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleCover}
-              className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
-            />
+            <ImagePickButtons onChange={handleCover} />
             {coverPreview && (
               <div className="mt-2 flex items-center gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

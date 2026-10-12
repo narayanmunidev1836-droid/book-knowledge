@@ -9,6 +9,7 @@ import {
   SaveOutlined,
   Loading3QuartersOutlined,
   PictureOutlined,
+  CameraOutlined,
   ExpandOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -19,6 +20,8 @@ import AutoTextarea from "@/components/AutoTextarea";
 
 export default function EntryForm({ onAddBook, newBook }) {
   const router = useRouter();
+  const galleryRef = useRef(null);
+  const cameraRef = useRef(null);
   const [books, setBooks] = useState([]);
   const [topics, setTopics] = useState([]);
   const [form, setForm] = useState({
@@ -334,14 +337,41 @@ export default function EntryForm({ onAddBook, newBook }) {
 
         <div>
           <label className="label">Images (optional)</label>
+          {/* Two hidden inputs: gallery picker, and camera (capture) for mobile. */}
           <input
+            ref={galleryRef}
             type="file"
             accept="image/*"
             multiple
+            onChange={handleImage}
+            className="hidden"
+          />
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
             capture="environment"
             onChange={handleImage}
-            className="input text-sm file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1 file:text-emerald-700"
+            className="hidden"
           />
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => galleryRef.current?.click()}
+              className="btn-ghost !py-2 text-sm"
+            >
+              <PictureOutlined /> Choose from Gallery
+            </button>
+            <div className="md:hidden">
+              <button
+                type="button"
+                onClick={() => cameraRef.current?.click()}
+                className="btn-ghost !py-2 text-sm"
+              >
+                <CameraOutlined /> Take Photo
+              </button>
+            </div>
+          </div>
           <p className="mt-1 text-xs text-slate-500">Up to 10 photos</p>
         </div>
       </div>
